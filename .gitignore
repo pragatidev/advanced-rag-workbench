@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+runs/*
+!runs/.gitkeep
+!runs/README.md
+*.egg-info/
+dist/
+build/
+.DS_Store
+.env
+scripts/_write_local_env.py
+.idea/
+.vscode/
