@@ -12,5 +12,7 @@ build/
 .DS_Store
 .env
 scripts/_write_local_env.py
+store/*
+!store/README.md
 .idea/
 .vscode/

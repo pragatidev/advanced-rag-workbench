@@ -9,11 +9,17 @@ from ragbench.retrieve import hybrid_search
 
 
 def run_hybrid(question: str, k: int = 4, contextual: bool = True) -> dict:
-    docs = load_documents()
-    chunks = chunk_corpus(docs, "recursive")
-    if contextual:
-        chunks = [contextualize(c) for c in chunks]
-    hits = hybrid_search(question, chunks, k=k, rerank=True)
+    from ragbench.store import load_index
+
+    stored = load_index("hybrid") if contextual else None
+    if stored is not None:
+        hits = stored.hybrid_search(question, k=k, rerank=True)
+    else:
+        docs = load_documents()
+        chunks = chunk_corpus(docs, "recursive")
+        if contextual:
+            chunks = [contextualize(c) for c in chunks]
+        hits = hybrid_search(question, chunks, k=k, rerank=True)
     answer, gen = generate_answer(question, [h.chunk for h in hits])
     return {
         "pipeline": "hybrid",

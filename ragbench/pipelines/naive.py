@@ -10,9 +10,15 @@ from ragbench.retrieve import dense_search
 
 
 def run_naive(question: str, k: int = 3) -> dict:
-    docs = load_documents()
-    chunks = chunk_corpus(docs, "fixed", size=80, overlap=0)
-    hits = dense_search(question, chunks, embedder=ToyEmbedder(semantic_mode=True), k=k)
+    from ragbench.store import load_index
+
+    stored = load_index("naive")
+    if stored is not None:
+        hits = stored.dense_search(question, k=k)
+    else:
+        docs = load_documents()
+        chunks = chunk_corpus(docs, "fixed", size=80, overlap=0)
+        hits = dense_search(question, chunks, embedder=ToyEmbedder(semantic_mode=True), k=k)
     answer, gen = generate_answer(question, [h.chunk for h in hits])
     return {
         "pipeline": "naive",
