@@ -23,11 +23,11 @@ pip install -r requirements.txt
 pytest -q
 ```
 
-Then pick a door. Details are in the README.
+Then work like a normal Python project. Open this folder in VS Code.
 
-1. **Walk the pipeline (how lectures film):** `python labs/02_naive_pipeline.py` then open `store/naive/manifest.json`. Or open the file in VS Code and Run Cell on each `# %%` block. Notebook twin: `notebooks/02_naive_pipeline.ipynb`.
-2. **Product (how a real app works):** `python -m ragbench serve` then open http://127.0.0.1:8787/ or `python examples/ticket_desk.py`
-3. **Harness:** open this folder in VS Code. Ask Claude Code, Grok, or Cursor about TS-999. The `ask-acme` skill retrieves first. No key.
-4. **CLI:** `python -m ragbench ask "What does error code TS-999 mean?" --pipeline hybrid`
+1. **Walk (how you build RAG):** open `labs/02_naive_pipeline.py` and Run, or Run Cell on each `# %%` block. Then open `store/naive/manifest.json`. Notebook twin: `notebooks/02_naive_pipeline.ipynb`.
+2. **Product (how it ships):** `python -m ragbench serve` then open http://127.0.0.1:8787/ or `python examples/ticket_desk.py`
+3. **Harness:** same folder, ask Claude Code / Grok / Cursor about TS-999. It should run the lab or `run_ask`, not invent files.
+4. **CLI (optional):** `python -m ragbench ask "What does error code TS-999 mean?" --pipeline hybrid`
 
 **API (production generate only):** copy `.env.example` to `.env`, set URL + model + key, then `--generate api`. Never commit `.env`. Retrieve is still local.

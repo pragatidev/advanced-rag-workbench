@@ -1,8 +1,8 @@
 # Labs
 
-These files are the screen walk. A lecture opens one of them, runs it top to bottom, and opens the folder it wrote.
+These files are the screen walk. A lecture opens one of them in VS Code, presses Run (or Run Cell), and opens the folder it wrote.
 
-They are ordinary Python. In VS Code, each `# %%` block is a cell (Python Interactive). That is the notebook walk without a Jupyter install.
+That is how you work a real RAG repo in week one: a Python file, not a custom CLI. Each `# %%` block is a cell (Python Interactive). Notebook twin: `notebooks/02_naive_pipeline.ipynb`.
 
 | File | Lecture | What you see |
 |---|---|---|

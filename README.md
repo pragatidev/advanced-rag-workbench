@@ -10,9 +10,12 @@ Lectures use this repo in three ways: **conceptual walkthrough** (animated pictu
 
 ## How we walk the pipeline on screen
 
-`run_ask` is the product. It is the wrong file to *teach* chunking. Screen walks open a **lab** (a linear program with `# %%` cells). Same shape as a notebook. Twin notebook: `notebooks/02_naive_pipeline.ipynb`.
+`run_ask` is the product. It is the wrong file to *teach* chunking.
+
+Screen walks are a **normal VS Code Python file**. Open `labs/02_naive_pipeline.py`. Press Run, or Run Cell on each `# %%` block (Python Interactive). That is the same loop as a notebook, without a Jupyter install. Twin notebook if you want `.ipynb`: `notebooks/02_naive_pipeline.ipynb`.
 
 ```
+# in VS Code: open the file, Run
 python labs/02_naive_pipeline.py
 ```
 
