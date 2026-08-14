@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ragbench.ask import run_ask
+from rag.ask import run_ask
 
 
 def handle_ticket(ticket_id: str, body: str, pipeline: str = "hybrid") -> dict:

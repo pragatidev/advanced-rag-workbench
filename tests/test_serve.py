@@ -2,7 +2,7 @@ import json
 import threading
 from http.client import HTTPConnection
 
-from ragbench.serve import make_server
+from app import make_server
 
 
 def _start():

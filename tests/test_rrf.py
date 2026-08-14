@@ -1,5 +1,5 @@
-from ragbench.chunkers import Chunk
-from ragbench.retrieve import Hit, rrf_fuse
+from rag.chunkers import Chunk
+from rag.retrieve import Hit, rrf_fuse
 
 
 def _hit(cid: str, rank_score: float) -> Hit:

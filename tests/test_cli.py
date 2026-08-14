@@ -1,7 +1,7 @@
 import json
 
-from ragbench.ask import run_ask
-from ragbench.cli import main
+from rag.ask import run_ask
+from rag.cli import main
 
 
 def test_ask_naive_json(capsys):

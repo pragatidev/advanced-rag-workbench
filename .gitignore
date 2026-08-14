@@ -14,5 +14,8 @@ build/
 scripts/_write_local_env.py
 store/*
 !store/README.md
+store/chroma/
+store/faiss/
+store/qdrant/
 .idea/
 .vscode/

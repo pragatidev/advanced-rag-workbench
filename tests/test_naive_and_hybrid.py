@@ -1,10 +1,10 @@
-from ragbench.chunkers import chunk_corpus
-from ragbench.corpus import load_documents
-from ragbench.embed import ToyEmbedder
-from ragbench.loops.retrieve_gate import needs_corpus
-from ragbench.pipelines.hybrid import run_hybrid
-from ragbench.pipelines.naive import run_naive
-from ragbench.retrieve import bm25_search, dense_search
+from rag.chunkers import chunk_corpus
+from rag.corpus import load_documents
+from rag.embed import ToyEmbedder
+from rag.loops.retrieve_gate import needs_corpus
+from rag.pipelines.hybrid import run_hybrid
+from rag.pipelines.naive import run_naive
+from rag.retrieve import bm25_search, dense_search
 
 
 def test_dense_prefers_general_error_advice_for_ts999():

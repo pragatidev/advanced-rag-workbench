@@ -1,26 +1,60 @@
-from ragbench.index import build_index
-from ragbench.settings import LAB_EMBEDDER
-from ragbench.store import load_index, print_card
+import pytest
+
+from rag.chunking import chunk_corpus
+from rag.corpus import load_documents
+from rag.embedders import HashEmbedder
+from rag.stores.chroma_store import ChromaStore
+from rag.stores.faiss_store import FaissStore
+from rag.stores.qdrant_store import QdrantStore
 
 
-def test_build_index_writes_named_embedder_and_chunks(tmp_path):
-    built = build_index("naive", root=tmp_path)
-    assert (tmp_path / "naive" / "manifest.json").is_file()
-    assert (tmp_path / "naive" / "chunks.jsonl").is_file()
-    assert (tmp_path / "naive" / "vectors.npy").is_file()
-    assert built.manifest["embedder"]["name"] == "ToyEmbedder"
-    assert built.manifest["embedder"]["dim"] == LAB_EMBEDDER["dim"]
-    assert built.manifest["chunker"] == "fixed"
-    loaded = load_index("naive", root=tmp_path)
-    assert loaded is not None
-    assert len(loaded.chunks) == built.manifest["chunk_count"]
-    card = print_card(loaded)
-    assert "ToyEmbedder" in card
-    assert "text-embedding-3-small" in card
+def _payload():
+    docs = load_documents()
+    chunks = chunk_corpus(docs, "recursive")
+    emb = HashEmbedder(semantic_mode=True)
+    vectors = emb.encode([c.text for c in chunks]).tolist()
+    q = emb.embed("What does error code TS-999 mean?").tolist()
+    return chunks, vectors, q
 
 
-def test_stored_dense_search_returns_hits(tmp_path):
-    idx = build_index("naive", root=tmp_path)
-    hits = idx.dense_search("What was ACME revenue growth in Q2 2023?", k=3)
+def test_chroma_roundtrip(tmp_path):
+    chunks, vectors, q = _payload()
+    store = ChromaStore("test", path=tmp_path / "chroma", persist=True)
+    store.reset()
+    store.add(chunks, vectors)
+    hits = store.query(q, k=3)
     assert hits
-    assert hits[0].chunk.text
+    assert store.info().backend == "chroma"
+    assert (tmp_path / "chroma").is_dir()
+
+
+def test_faiss_roundtrip(tmp_path):
+    chunks, vectors, q = _payload()
+    store = FaissStore("test", path=tmp_path / "faiss")
+    store.reset()
+    store.add(chunks, vectors)
+    hits = store.query(q, k=3)
+    assert hits
+    assert (tmp_path / "faiss" / "index.faiss").is_file()
+
+
+def test_qdrant_roundtrip(tmp_path):
+    chunks, vectors, q = _payload()
+    store = QdrantStore("test", path=tmp_path / "qdrant")
+    store.reset()
+    store.add(chunks, vectors)
+    hits = store.query(q, k=3)
+    assert hits
+
+
+def test_pgvector_optional():
+    from rag.stores import pgvector_store as pgs
+
+    if not pgs.available():
+        pytest.skip("Postgres/pgvector not running")
+    chunks, vectors, q = _payload()
+    store = pgs.PgVectorStore("pytest")
+    store.reset()
+    store.add(chunks, vectors)
+    hits = store.query(q, k=3)
+    assert hits

@@ -1,10 +1,10 @@
-from ragbench.eval.metrics import context_recall, faithfulness
-from ragbench.eval.runner import run_eval
-from ragbench.graph.tiny import answer_global
-from ragbench.gov import audit_row, redact
-from ragbench.chunkers import Chunk
-from ragbench.loops.crag import WEB_SEARCH_ENABLED, grade
-from ragbench.retrieve import Hit
+from rag.eval.metrics import context_recall, faithfulness
+from rag.eval.runner import run_eval
+from rag.graph.tiny import answer_global
+from rag.gov import audit_row, redact
+from rag.chunkers import Chunk
+from rag.loops.crag import WEB_SEARCH_ENABLED, grade
+from rag.retrieve import Hit
 
 
 def test_metrics_split_retrieval_from_generation():

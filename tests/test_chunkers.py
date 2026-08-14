@@ -1,5 +1,5 @@
-from ragbench.chunkers import chunk_corpus, token_count
-from ragbench.corpus import load_documents
+from rag.chunkers import chunk_corpus, token_count
+from rag.corpus import load_documents
 
 
 def test_fixed_chunk_loses_company_on_growth_sentence():

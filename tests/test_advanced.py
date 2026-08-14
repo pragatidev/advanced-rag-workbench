@@ -1,8 +1,8 @@
-from ragbench.corpus import load_documents
-from ragbench.multimodal import table_row_chunks
-from ragbench.pipelines import PIPELINES
-from ragbench.query.hyde import hypothetical_document
-from ragbench.query.rewrite import multi_query
+from rag.corpus import load_documents
+from rag.multimodal import table_row_chunks
+from rag.pipelines import PIPELINES
+from rag.query.hyde import hypothetical_document
+from rag.query.rewrite import multi_query
 
 
 def test_all_named_pipelines_run():

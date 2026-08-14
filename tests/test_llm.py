@@ -1,9 +1,9 @@
 import pytest
 
-from ragbench.envload import api_base, api_model, generate_mode
-from ragbench.generate import generate_answer
-from ragbench.chunkers import Chunk
-from ragbench.llm import chat
+from rag.envload import api_base, api_model, generate_mode
+from rag.generate import generate_answer
+from rag.chunkers import Chunk
+from rag.llm import chat
 
 
 def test_default_endpoint_is_token_plan_compatible(monkeypatch):
