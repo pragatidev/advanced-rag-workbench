@@ -8,7 +8,45 @@ This is not a LangChain tour. This is not Nike. The ACME files were written for 
 
 Lectures use this repo in three ways: **conceptual walkthrough** (animated picture of the idea), **hands-on working demo** (this folder on screen), **advanced walkthrough** (the same folder, later pipeline). The capture is of a real run, not a mock UI.
 
-## Two ways to run (both are first-class)
+## How a real program invokes this
+
+The CLI is a lab. Production never types `python -m ragbench ask`. A support desk, Slack bot, or chat widget calls **one function**:
+
+```
+from ragbench import run_ask
+
+result = run_ask(user_question, pipeline="hybrid")
+# result["answer"], result["hits"]
+```
+
+That is the whole invoke. Practical shapes are just wrappers:
+
+| Use case | What calls `run_ask` |
+|---|---|
+| Website help widget | browser → `POST /ask` → `run_ask` |
+| Slack / Teams / Zendesk | webhook handler imports `run_ask` |
+| Ticket auto-draft | `examples/ticket_desk.py` (`handle_ticket`) |
+| Editor harness | `ask-acme` skill runs retrieve, then writes from the hits |
+
+Start the product door (tiny ACME desk in the browser):
+
+```
+python -m ragbench serve
+```
+
+Open http://127.0.0.1:8787/ and ask TS-999. Same path as curl:
+
+```
+curl -s http://127.0.0.1:8787/ask -H "Content-Type: application/json" -d "{\"question\":\"What does error code TS-999 mean?\",\"pipeline\":\"hybrid\"}"
+```
+
+Or skip HTTP and import it, the way a ticket bot would:
+
+```
+python examples/ticket_desk.py
+```
+
+## Two ways to run the lab (both are first-class)
 
 Chunking, storage, BM25, vectors, and eval are always **local**. No key for that.
 
@@ -90,7 +128,8 @@ If a key is already in `.env`, `ask` uses the API unless you pass `--generate ex
 ```
 data/acme/     teaching corpus
 eval/          questions.jsonl
-ragbench/      the library
+ragbench/      the library (run_ask is the product)
+examples/      ticket desk: how an app calls run_ask
 runs/          metrics and ask logs
 tests/         the suite you just ran
 ```
@@ -109,7 +148,7 @@ tests/         the suite you just ran
 pytest -q
 ```
 
-Covers: lost-company chunk split, TS-999 dense miss vs BM25 hit vs hybrid recover, RRF k=60 formula, retrieve-or-not chitchat, CRAG web flag off, tiny graph themes, PII redact + audit, naive vs hybrid eval file, HyDE / graph pipelines, table-row chunks, CLI ask + refuse.
+Covers: lost-company chunk split, TS-999 dense miss vs BM25 hit vs hybrid recover, RRF k=60 formula, retrieve-or-not chitchat, CRAG web flag off, tiny graph themes, PII redact + audit, naive vs hybrid eval file, HyDE / graph pipelines, table-row chunks, CLI ask + refuse, HTTP POST /ask, ticket handler.
 
 Not tested in CI (needs a paid key, later lectures): live OpenAI or Anthropic generation, hosted rerankers, a full Microsoft GraphRAG index.
 
