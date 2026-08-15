@@ -1,17 +1,23 @@
 # Labs
 
-Moved. Lecture walks now live under `notebooks/section_XX/`. Open those in VS Code and Run.
-
-| File | Lecture | What you see |
-|---|---|---|
-| `02_naive_pipeline.py` | 2.2 | load → chunk → **named embedder** → **store/naive/** → retrieve → generate |
-| `03_compare_chunkers.py` | 3.2 | fixed vs recursive vs semantic vs parent-child on the 3% sentence |
-| `04_hybrid_vs_dense.py` | 4.2 | same TS-999 question, two stores |
-
-Twin notebook for people who think in `.ipynb`: `notebooks/02_naive_pipeline.ipynb`. Same stages. Same store folder.
+Each lab is a checkpoint folder you can resume a week later.
 
 ```
-python labs/02_naive_pipeline.py
+labs/lab_s3_naive/
+  starter/     TODOs
+  part_1/      first working slice
+  part_2/
+  part_3/
+  part_4/      full run
+  solution/    reference (same as the last part)
 ```
 
-Then open `store/naive/manifest.json`. The embedder name is in that file.
+Run from the repo root:
+
+```
+python labs/lab_s3_naive/part_1/load_and_chunk.py
+```
+
+`# %%` twins live under `notebooks/section_XX_*`.
+
+Generate steps print `SKIPPED` when no key and no local server are configured. Retrieval always runs offline.

@@ -1,35 +1,25 @@
-# Lecture notebooks
+# Notebooks
 
-Each file is one screen-walk lecture. Open it in VS Code. Run Cell on each `# %%` block
-(Python Interactive), or Run the whole file.
+VS Code `# %%` twins of each lab part. Open the file, Run Cell.
 
-Markdown cells (`# %% [markdown]`) are the teaching. Code cells are the run.
-
-| File | Lecture |
+| Section | Folder |
 |---|---|
-| section_01_setup/01.3_set_up_the_workbench.py | 1.3 |
-| section_02_naive_rag/02.2_build_the_naive_pipeline.py | 2.2 |
-| section_02_naive_rag/02.2b_vector_stores.py | 2.2 (Chroma, FAISS, Qdrant, pgvector) |
-| section_02_naive_rag/02.3_the_chunk_that_lost_the_company_name.py | 2.3 |
-| section_03_chunking/03.2_compare_chunkers.py | 3.2 |
-| section_03_chunking/03.4_late_chunking.py | 3.4 |
-| section_04_hybrid/04.2_hybrid_search_with_rrf.py | 4.2 |
-| section_04_hybrid/04.3_contextual_chunks.py | 4.3 |
-| section_04_hybrid/04.4_rerank_the_shortlist.py | 4.4 |
-| section_05_query/05.2_rewrite_and_multi_query.py | 5.2 |
-| section_05_query/05.4_run_hyde.py | 5.4 |
-| section_06_retrieve_or_not/06.2_retrieve_gate.py | 6.2 |
-| section_06_retrieve_or_not/06.3_support_or_refuse.py | 6.3 |
-| section_07_crag/07.2_score_the_retrieved_set.py | 7.2 |
-| section_07_crag/07.3_web_search_is_a_policy.py | 7.3 |
-| section_08_graph/08.2_tiny_graph.py | 8.2 |
-| section_09_tables/09.2_parse_tables_and_captions.py | 9.2 |
-| section_09_tables/09.3_multimodal_retrieve.py | 9.3 |
-| section_10_eval/10.2_run_the_suite.py | 10.2 |
-| section_10_eval/10.3_cost_per_query.py | 10.3 |
-| section_10_eval/10.4_traces.py | 10.4 |
-| section_11_govern/11.2_metadata_filters.py | 11.2 |
-| section_11_govern/11.3_audit.py | 11.3 |
-| section_12_capstone/12.2_final_comparison.py | 12.2 |
+| S1 Get oriented | `section_01_get_oriented/` |
+| S2 Any provider | `section_02_set_up_any_provider_and_local/` |
+| S3 Naive RAG | `section_03_run_naive_rag/` |
+| S4 Diagnose naive | `section_04_watch_naive_fail/` |
+| S5 Semantic chunk | `section_05_chunk_with_a_measured_reason/` |
+| S6 Small-to-big | `section_06_small_to_big_and_late_chunking/` |
+| S7 Hybrid + RRF | `section_07_hybrid_search_and_rrf/` |
+| S8 Rerank + pack | `section_08_contextual_rerank_and_pack/` |
+| S9 Query enhancement | `section_09_query_enhancement/` |
+| S10 Routing | `section_10_self_rag_and_adaptive_routing/` |
+| S11 CRAG | `section_11_corrective_rag_and_retrieve_as_tool/` |
+| S12 Graph RAG | `section_12_graph_rag_and_when_to_refuse/` |
+| S13 Multimodal | `section_13_multimodal_tables_and_images/` |
+| S14 Eval | `section_14_evaluation_metrics/` |
+| S15 Cost / cache / traces | `section_15_cost_cache_and_traces/` |
+| S16 Governance | `section_16_enterprise_data_governance/` |
+| S17 Capstone | `section_17_ship_one_pipeline_from_evidence/` |
 
-Concept lectures (1.1, 1.2, 1.4, 2.1, 2.4, ...) are animated. They do not need a notebook.
+The runnable source of truth is `labs/`. Concept cards are `docs/mechanisms/`.

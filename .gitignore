@@ -19,3 +19,5 @@ store/faiss/
 store/qdrant/
 .idea/
 .vscode/
+_planning/*
+!_planning/REBUILD_RUN_REPORT.md

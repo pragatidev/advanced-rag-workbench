@@ -1,0 +1,43 @@
+[project]
+name = "advanced-rag-workbench"
+version = "1.0.0"
+description = "Student workbench for Advanced RAG Techniques: Architecture [2026]"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Pragati Kunwer" }]
+dependencies = [
+  "numpy==2.4.6",
+  "rank-bm25==0.2.2",
+  "pytest==9.1.1",
+  "chromadb==1.5.9",
+  "faiss-cpu==1.15.0",
+  "qdrant-client==1.19.0",
+  "openai==2.24.0",
+  "python-dotenv==1.2.2",
+]
+
+[project.optional-dependencies]
+pgvector = ["psycopg[binary]==3.3.4"]
+local-rerank = ["sentence-transformers==3.4.1"]
+docling = ["docling==2.31.0"]
+all = [
+  "psycopg[binary]==3.3.4",
+  "sentence-transformers==3.4.1",
+  "docling==2.31.0",
+]
+
+[project.scripts]
+rag = "rag.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["rag*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

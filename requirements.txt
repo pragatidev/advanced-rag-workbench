@@ -1,7 +1,11 @@
-numpy>=1.26
-rank-bm25>=0.2.2
-pytest>=8.0
-chromadb>=0.5.0
-faiss-cpu>=1.8.0
-qdrant-client>=1.9.0
-psycopg[binary]>=3.1
+# Pinned. Recreate with: pip install -r requirements.txt
+# Python 3.11 or 3.12. See .python-version.
+numpy==2.4.6
+rank-bm25==0.2.2
+pytest==9.1.1
+chromadb==1.5.9
+faiss-cpu==1.15.0
+qdrant-client==1.19.0
+openai==2.24.0
+python-dotenv==1.2.2
+psycopg[binary]==3.3.4
