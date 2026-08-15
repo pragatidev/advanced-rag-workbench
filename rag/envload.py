@@ -1,4 +1,8 @@
-"""Load a local .env if present. Never print values. .env is gitignored."""
+"""Load a local .env if present. Never print values. .env is gitignored.
+
+Name resolution lives in rag.settings. This module is the file loader plus
+thin wrappers so older imports keep working.
+"""
 
 from __future__ import annotations
 
@@ -23,56 +27,48 @@ def load_dotenv(path: Path | None = None) -> None:
             os.environ[key] = value
 
 
+def require_env_file() -> Path:
+    """Teach copy-to-.env without printing secrets."""
+    env_path = ROOT / ".env"
+    example = ROOT / ".env.example"
+    if env_path.is_file():
+        print(".env present. Values are not printed.")
+    else:
+        print("No .env file. Copy .env.example to .env, then set a key or a local base URL.")
+        print("example:", example.as_posix())
+    return env_path
+
+
 def api_base() -> str:
-    return (
-        os.environ.get("RAGBENCH_API_BASE")
-        or os.environ.get("ANTHROPIC_BASE_URL")
-        or "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-    ).rstrip("/")
+    from rag.settings import Settings
+
+    return Settings.llm_base_url
 
 
 def api_key() -> str:
-    for name in (
-        "RAGBENCH_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "ANTHROPIC_AUTH_TOKEN",
-        "BAILIAN_TOKEN_PLAN_API_KEY",
-        "DASHSCOPE_API_KEY",
-        "OPENAI_API_KEY",
-    ):
-        val = os.environ.get(name, "").strip()
-        if val:
-            return val
-    return ""
+    from rag.settings import Settings
+
+    return Settings.api_key
 
 
 def api_model() -> str:
-    return (
-        os.environ.get("RAGBENCH_MODEL")
-        or os.environ.get("ANTHROPIC_MODEL")
-        or "qwen3.8-max-preview"
-    ).strip()
+    from rag.settings import Settings
+
+    return Settings.llm_model
 
 
 def api_backend() -> str:
-    explicit = (os.environ.get("RAGBENCH_API_BACKEND") or "").strip().lower()
-    if explicit in {"anthropic", "openai"}:
-        return explicit
-    base = api_base().lower()
-    if "apps/anthropic" in base or "anthropic" in base:
-        return "anthropic"
-    return "openai"
+    from rag.settings import Settings
+
+    return Settings.api_backend
 
 
 def generate_mode(cli_value: str | None = None) -> str:
+    from rag.settings import Settings
+
     if cli_value:
         mode = cli_value.strip().lower()
-    elif os.environ.get("RAGBENCH_GENERATE"):
-        mode = os.environ["RAGBENCH_GENERATE"].strip().lower()
-    elif api_key():
-        mode = "api"
-    else:
-        mode = "extractive"
-    if mode not in {"extractive", "api"}:
+        if mode in {"extractive", "api"}:
+            return mode
         return "extractive"
-    return mode
+    return Settings.generate_mode

@@ -6,24 +6,36 @@ from rag.chunkers import Chunk
 from rag.llm import chat
 
 
-def test_default_endpoint_is_token_plan_compatible(monkeypatch):
-    monkeypatch.delenv("RAGBENCH_API_BASE", raising=False)
-    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
-    monkeypatch.delenv("RAGBENCH_MODEL", raising=False)
-    monkeypatch.delenv("ANTHROPIC_MODEL", raising=False)
-    assert api_base().endswith("/compatible-mode/v1")
-    assert "maas.aliyuncs.com" in api_base()
-    assert "qwen3.8" in api_model()
+def test_default_endpoint_is_model_studio_intl(monkeypatch):
+    for name in (
+        "RAGBENCH_API_BASE",
+        "RAGBENCH_BASE_URL",
+        "LLM_BASE_URL",
+        "ANTHROPIC_BASE_URL",
+        "RAGBENCH_MODEL",
+        "LLM_MODEL",
+        "ANTHROPIC_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    assert api_base() == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    assert api_model() == "qwen3.8-max"
 
 
 def test_generate_mode_without_key_is_extractive(monkeypatch):
     monkeypatch.delenv("RAGBENCH_GENERATE", raising=False)
-    monkeypatch.delenv("RAGBENCH_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
-    monkeypatch.delenv("BAILIAN_TOKEN_PLAN_API_KEY", raising=False)
-    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    for name in (
+        "RAGBENCH_API_KEY",
+        "LLM_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "BAILIAN_TOKEN_PLAN_API_KEY",
+        "DASHSCOPE_API_KEY",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "XAI_API_KEY",
+        "DEEPSEEK_API_KEY",
+    ):
+        monkeypatch.setenv(name, "")
     assert generate_mode(None) == "extractive"
 
 
@@ -41,12 +53,19 @@ def test_extractive_still_default():
 
 
 def test_api_without_key_raises(monkeypatch):
-    monkeypatch.delenv("RAGBENCH_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
-    monkeypatch.delenv("BAILIAN_TOKEN_PLAN_API_KEY", raising=False)
-    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    for name in (
+        "RAGBENCH_API_KEY",
+        "LLM_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "BAILIAN_TOKEN_PLAN_API_KEY",
+        "DASHSCOPE_API_KEY",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "XAI_API_KEY",
+        "DEEPSEEK_API_KEY",
+    ):
+        monkeypatch.setenv(name, "")
     chunk = Chunk(chunk_id="c", doc_id="d", title="t", text="hello")
     with pytest.raises(RuntimeError, match="key"):
         chat("q", [chunk])
