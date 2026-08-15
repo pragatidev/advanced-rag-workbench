@@ -74,7 +74,10 @@ def _chat_anthropic(question: str, chunks: list[Chunk], timeout: int) -> dict:
     }
     headers = {
         "Content-Type": "application/json",
+        # Both auth styles: real Anthropic reads x-api-key; OpenAI-compatible and
+        # Claude-Code-style gateways (e.g. Model Studio app routes) require Bearer.
         "x-api-key": api_key(),
+        "Authorization": "Bearer " + api_key(),
         "anthropic-version": "2023-06-01",
     }
     payload = _post(url, headers, body, timeout)
