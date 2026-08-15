@@ -21,3 +21,4 @@ store/qdrant/
 .vscode/
 _planning/*
 !_planning/REBUILD_RUN_REPORT.md
+!_planning/BASICS_LABS_RUN_REPORT.md

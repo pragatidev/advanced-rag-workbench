@@ -1,0 +1,31 @@
+"""An embedding is a list of numbers that carries meaning — similar ACME sentences land near each other."""
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from rag.embedders import HashEmbedder, cosine
+
+near_a = "The company's revenue grew by 3% over the previous quarter."
+near_b = "Prior quarter revenue was 314 million USD."
+far = "Shared passwords are forbidden."
+
+embedder = HashEmbedder()
+vec_a = embedder.embed(near_a)
+vec_b = embedder.embed(near_b)
+vec_far = embedder.embed(far)
+score_near = cosine(vec_a, vec_b)
+score_far = cosine(vec_a, vec_far)
+
+print("near_a", near_a)
+print("  first 6 numbers", [round(float(x), 3) for x in vec_a[:6]])
+print("near_b", near_b)
+print("  first 6 numbers", [round(float(x), 3) for x in vec_b[:6]])
+print("far   ", far)
+print("  first 6 numbers", [round(float(x), 3) for x in vec_far[:6]])
+print("similar pair", round(score_near, 3))
+print("unrelated pair", round(score_far, 3))
+print("story: the two revenue sentences sit nearer than revenue vs the password rule.")
