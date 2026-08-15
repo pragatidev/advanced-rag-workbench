@@ -76,6 +76,38 @@ def rerank_lexical(query: str, hits: list[Hit], keep: int = 5) -> list[Hit]:
     return scored[:keep]
 
 
+def alpha_hybrid(
+    dense: list[Hit],
+    sparse: list[Hit],
+    alpha: float = 0.5,
+    top_n: int = 8,
+) -> list[Hit]:
+    """alpha * dense + (1-alpha) * sparse after min-max normalize.
+
+    Unbounded BM25 scores swamp cosine unless you scale. That is the lesson.
+    """
+
+    def _norm(hits: list[Hit]) -> dict[str, float]:
+        if not hits:
+            return {}
+        scores = [h.score for h in hits]
+        lo, hi = min(scores), max(scores)
+        span = (hi - lo) or 1.0
+        return {h.chunk.chunk_id: (h.score - lo) / span for h in hits}
+
+    dn = _norm(dense)
+    sn = _norm(sparse)
+    by_id: dict[str, Chunk] = {}
+    for h in dense + sparse:
+        by_id[h.chunk.chunk_id] = h.chunk
+    fused: list[Hit] = []
+    for cid, chunk in by_id.items():
+        score = alpha * dn.get(cid, 0.0) + (1.0 - alpha) * sn.get(cid, 0.0)
+        fused.append(Hit(chunk=chunk, score=score, source=f"alpha:{alpha}"))
+    fused.sort(key=lambda h: h.score, reverse=True)
+    return fused[:top_n]
+
+
 def hybrid_search(query: str, chunks: list[Chunk], k: int = 8, rerank: bool = True) -> list[Hit]:
     dense = dense_search(query, chunks, k=max(k, 8))
     sparse = bm25_search(query, chunks, k=max(k, 8))

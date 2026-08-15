@@ -6,7 +6,7 @@ from pathlib import Path
 
 from rag.chunking import Chunk
 from rag.retrieve import Hit
-from rag.stores.base import STORE_DIR, StoreInfo
+from rag.stores.base import STORE_DIR, StoreInfo, as_embeddings
 
 
 class QdrantStore:
@@ -44,11 +44,12 @@ class QdrantStore:
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
             )
 
-    def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+    def add(self, chunks: list[Chunk], embeddings) -> None:
         from qdrant_client.models import PointStruct
 
         if not chunks:
             return
+        embeddings = as_embeddings(chunks, embeddings)
         dim = len(embeddings[0])
         self._ensure(dim)
         points = []
@@ -118,4 +119,6 @@ class QdrantStore:
             backend="qdrant",
             persist_path=str(self.path),
             note=f"collection={self.collection_name} count={n}",
+            count=n,
+            collection=self.collection_name,
         )

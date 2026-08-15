@@ -80,6 +80,28 @@ class HashEmbedder:
 ToyEmbedder = HashEmbedder
 
 
+def get_embedder(name: str | None = None):
+    """Resolve an embedder from a settings name. Offline default is HashEmbedder."""
+    from rag.settings import Settings
+
+    raw = (name or Settings.embed_model or "hash").strip()
+    key = raw.lower()
+    if key in {"hash", "hashembedder", "toy", "toyembedder"}:
+        return HashEmbedder(semantic_mode=True)
+    if key in {"hash-lexical", "lexical", "hashembedder-lexical"}:
+        return HashEmbedder(semantic_mode=False)
+    if key in {"nomic-embed-text", "nomic-embed-text:v1.5", "mxbai-embed-large", "all-minilm"}:
+        # Named local models. The lab stand-in stays HashEmbedder so clone stays offline.
+        emb = HashEmbedder(semantic_mode=True)
+        emb.name = raw
+        return emb
+    if "minilm" in key:
+        return MiniLMEmbedder()
+    emb = HashEmbedder(semantic_mode=True)
+    emb.name = raw
+    return emb
+
+
 class MiniLMEmbedder:
     """Real local semantic model via Chroma ONNX (all-MiniLM-L6-v2). First call may download."""
 

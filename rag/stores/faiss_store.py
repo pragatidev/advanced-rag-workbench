@@ -9,7 +9,7 @@ import numpy as np
 
 from rag.chunking import Chunk
 from rag.retrieve import Hit
-from rag.stores.base import STORE_DIR, StoreInfo
+from rag.stores.base import STORE_DIR, StoreInfo, as_embeddings
 
 
 def _norm(mat: np.ndarray) -> np.ndarray:
@@ -86,11 +86,12 @@ class FaissStore:
             if p.is_file():
                 p.unlink()
 
-    def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+    def add(self, chunks: list[Chunk], embeddings) -> None:
         import faiss
 
         if not chunks:
             return
+        embeddings = as_embeddings(chunks, embeddings)
         mat = _norm(np.asarray(embeddings, dtype=np.float32))
         if self._index is None:
             self._index = faiss.IndexFlatIP(mat.shape[1])
@@ -119,4 +120,6 @@ class FaissStore:
             backend="faiss",
             persist_path=str(self.path),
             note=f"IndexFlatIP ntotal={n}",
+            count=n,
+            collection=self.collection_name,
         )

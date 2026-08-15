@@ -16,6 +16,16 @@ _COMMUNITIES = {
 }
 
 
+def community_summaries() -> dict[str, str]:
+    return dict(_COMMUNITIES)
+
+
+def refuse_if_local_holds(local_ok: bool) -> str | None:
+    if local_ok:
+        return "REFUSE: local vector RAG holds; do not pay for a graph index."
+    return None
+
+
 def build() -> dict:
     docs = load_documents()
     entities: dict[str, set[str]] = defaultdict(set)
@@ -28,12 +38,21 @@ def build() -> dict:
         "Main themes: sequential revenue reporting, billing integrity, "
         "least-privilege access, and PII minimization."
     )
+    summaries = {
+        "revenue": "sequential revenue reporting",
+        "billing": "billing integrity",
+        "access": "least-privilege access",
+        "privacy": "PII minimization",
+    }
     return {
         "nodes": sorted(entities),
         "members": {k: sorted(v) for k, v in entities.items()},
+        "communities": summaries,
+        "community_summaries": summaries,
         "community_summary": summary,
         "index_cost": {
             "llm_extract_calls": 0,
+            "seeded": True,
             "note": "seeded toy graph. a real GraphRAG index would extract entities with an LLM.",
         },
     }

@@ -28,11 +28,16 @@ def run_ask(question: str, pipeline: str = "hybrid", generate: str | None = None
         }
     else:
         payload = PIPELINES[pipeline](question)
+    payload.setdefault("answer_source", "retrieved_text")
     log_ask(
         {
             "pipeline": payload.get("pipeline"),
             "question": question,
             "chunk_ids": [h.get("chunk_id") for h in payload.get("hits", [])],
+            "gen_ai.request.model": (payload.get("generator") or {}).get("model", "extractive"),
+            "tokens": 0,
+            "usd": 0.0,
+            "latency_ms": 0.0,
         },
         ROOT_LOG,
     )

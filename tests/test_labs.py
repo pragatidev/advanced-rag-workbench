@@ -3,50 +3,49 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED = [
-    "notebooks/section_01_setup/01.3_set_up_the_workbench.py",
-    "notebooks/section_02_naive_rag/02.2_build_the_naive_pipeline.py",
-    "notebooks/section_02_naive_rag/02.2b_vector_stores.py",
-    "notebooks/section_02_naive_rag/02.3_the_chunk_that_lost_the_company_name.py",
-    "notebooks/section_03_chunking/03.2_compare_chunkers.py",
-    "notebooks/section_03_chunking/03.4_late_chunking.py",
-    "notebooks/section_04_hybrid/04.2_hybrid_search_with_rrf.py",
-    "notebooks/section_04_hybrid/04.3_contextual_chunks.py",
-    "notebooks/section_04_hybrid/04.4_rerank_the_shortlist.py",
-    "notebooks/section_05_query/05.2_rewrite_and_multi_query.py",
-    "notebooks/section_05_query/05.4_run_hyde.py",
-    "notebooks/section_06_retrieve_or_not/06.2_retrieve_gate.py",
-    "notebooks/section_06_retrieve_or_not/06.3_support_or_refuse.py",
-    "notebooks/section_07_crag/07.2_score_the_retrieved_set.py",
-    "notebooks/section_07_crag/07.3_web_search_is_a_policy.py",
-    "notebooks/section_08_graph/08.2_tiny_graph.py",
-    "notebooks/section_09_tables/09.2_parse_tables_and_captions.py",
-    "notebooks/section_09_tables/09.3_multimodal_retrieve.py",
-    "notebooks/section_10_eval/10.2_run_the_suite.py",
-    "notebooks/section_10_eval/10.3_cost_per_query.py",
-    "notebooks/section_10_eval/10.4_traces.py",
-    "notebooks/section_11_govern/11.2_metadata_filters.py",
-    "notebooks/section_11_govern/11.3_audit.py",
-    "notebooks/section_12_capstone/12.2_final_comparison.py",
+    "labs/lab_s2_env/part_1/setup_clone.py",
+    "labs/lab_s2_env/part_2/configure_env.py",
+    "labs/lab_s2_env/part_3/configure_qwen.py",
+    "labs/lab_s2_env/part_4/ping_generate.py",
+    "labs/lab_s3_naive/part_1/load_and_chunk.py",
+    "labs/lab_s3_naive/part_2/embed_and_persist.py",
+    "labs/lab_s3_naive/part_3/compare_stores.py",
+    "labs/lab_s3_naive/part_4/run_naive_ask.py",
+    "labs/lab_s4_diagnose/part_4/run_diagnosis.py",
+    "labs/lab_s5_chunk/part_2/cosine_breakpoint.py",
+    "labs/lab_s6_s2b/part_2/sentence_window.py",
+    "labs/lab_s7_hybrid/part_4/run_hybrid.py",
+    "labs/lab_s8_rerank/part_2/cross_encoder.py",
+    "labs/lab_s9_query/part_3/hyde.py",
+    "labs/lab_s10_route/part_3/router.py",
+    "labs/lab_s11_crag/part_4/run_loop.py",
+    "labs/lab_s12_graph/part_4/run_graph.py",
+    "labs/lab_s13_mm/part_2/docling_parse.py",
+    "labs/lab_s14_eval/part_3/run_suite.py",
+    "labs/lab_s15_prod/part_2/semantic_cache.py",
+    "labs/lab_s16_gov/part_2/pgvector_rls.py",
+    "labs/lab_s17_cap/part_2/decision_note.py",
+    "docs/mechanisms/retrieve_then_generate.md",
+    ".env.example",
 ]
 
 
-def test_every_screen_walk_notebook_exists():
+def test_every_curriculum_lab_exists():
     missing = [p for p in REQUIRED if not (ROOT / p).is_file()]
     assert missing == []
 
 
-def test_naive_notebook_teaches_chroma_and_named_embedder():
-    text = (ROOT / "notebooks/section_02_naive_rag/02.2_build_the_naive_pipeline.py").read_text(
-        encoding="utf-8"
-    )
-    assert "Chroma" in text
-    assert "HashEmbedder" in text
-    assert "# %% [markdown]" in text
+def test_checkpoint_folders_have_starter_and_solution():
+    labs = sorted(p for p in (ROOT / "labs").iterdir() if p.is_dir() and p.name.startswith("lab_"))
+    assert len(labs) == 16
+    for lab in labs:
+        assert (lab / "starter").is_dir(), lab
+        assert (lab / "solution").is_dir(), lab
+        assert (lab / "part_1").is_dir(), lab
 
 
-def test_store_notebook_names_all_four_local_backends():
-    text = (ROOT / "notebooks/section_02_naive_rag/02.2b_vector_stores.py").read_text(
-        encoding="utf-8"
-    )
-    for name in ("Chroma", "FAISS", "Qdrant", "pgvector", "Pinecone"):
-        assert name in text
+def test_env_example_has_verified_qwen_id():
+    text = (ROOT / ".env.example").read_text(encoding="utf-8")
+    assert "qwen3.8-max" in text
+    assert "qwen3.8-max-preview" not in text
+    assert "dashscope-intl.aliyuncs.com/compatible-mode/v1" in text

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from rag.chunking import Chunk
 from rag.retrieve import Hit
-from rag.stores.base import StoreInfo
+from rag.stores.base import StoreInfo, as_embeddings
 
 DEFAULT_URL = "postgresql://acme:acme@127.0.0.1:5432/acme_rag"
 
@@ -63,9 +63,10 @@ class PgVectorStore:
                 (self.collection_name,),
             )
 
-    def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+    def add(self, chunks: list[Chunk], embeddings) -> None:
         if not chunks:
             return
+        embeddings = as_embeddings(chunks, embeddings)
         dim = len(embeddings[0])
         with self.conn.cursor() as cur:
             # Widen the column if needed (first insert wins the dim).
@@ -142,4 +143,6 @@ class PgVectorStore:
             backend="pgvector",
             persist_path=self.url.split("@")[-1] if "@" in self.url else self.url,
             note=f"collection={self.collection_name} count={n}",
+            count=int(n),
+            collection=self.collection_name,
         )

@@ -21,6 +21,13 @@ def _hits_payload(hits) -> list[dict]:
     ]
 
 
+class NaivePipeline:
+    name = "naive"
+
+    def __call__(self, question: str, k: int = 3, persist: bool = False) -> dict:
+        return run_naive(question, k=k, persist=persist)
+
+
 def run_naive(question: str, k: int = 3, persist: bool = False) -> dict:
     docs = load_documents()
     chunks = chunk_corpus(docs, "fixed", size=80, overlap=0)
@@ -37,6 +44,7 @@ def run_naive(question: str, k: int = 3, persist: bool = False) -> dict:
         "pipeline": "naive",
         "question": question,
         "answer": answer,
+        "answer_source": "retrieved_text",
         "generator": gen,
         "store": store.info().__dict__,
         "hits": _hits_payload(hits),

@@ -93,9 +93,11 @@ def parent_child(doc: Document, child_size: int = 40) -> list[Chunk]:
     sections = [p.strip() for p in doc.text.split("\n## ") if p.strip()]
     chunks: list[Chunk] = []
     n = 0
-    for section in sections:
+    for s_i, section in enumerate(sections):
+        parent_id = f"{doc.doc_id}:parent:{s_i}"
         words = _words(section)
         i = 0
+        leaf_n = 0
         while i < len(words):
             child = _join(words[i : i + child_size])
             if child:
@@ -106,22 +108,30 @@ def parent_child(doc: Document, child_size: int = 40) -> list[Chunk]:
                         title=doc.title,
                         text=child,
                         parent_text=section,
-                        metadata={**doc.metadata, "chunker": "parent_child"},
+                        metadata={
+                            **doc.metadata,
+                            "chunker": "parent_child",
+                            "parent_id": parent_id,
+                            "parent_chars": len(section),
+                            "child_chars": len(child),
+                            "leaf_index": leaf_n,
+                        },
                     )
                 )
                 n += 1
+                leaf_n += 1
             i += child_size
     return chunks
 
 
 def semantic_by_heading(doc: Document) -> list[Chunk]:
-    """Cheap stand-in for semantic chunking: one chunk per heading block."""
+    """Heading-block split. Not cosine-breakpoint semantic chunking."""
     parts = [p.strip() for p in doc.text.split("\n## ") if p.strip()]
     chunks: list[Chunk] = []
     for n, part in enumerate(parts):
         chunks.append(
             Chunk(
-                chunk_id=f"{doc.doc_id}:sem:{n}",
+                chunk_id=f"{doc.doc_id}:semh:{n}",
                 doc_id=doc.doc_id,
                 title=doc.title,
                 text=part,
@@ -129,6 +139,13 @@ def semantic_by_heading(doc: Document) -> list[Chunk]:
             )
         )
     return chunks
+
+
+def semantic_cosine(doc: Document, percentile: float = 95.0, **kwargs) -> list[Chunk]:
+    """Cosine-breakpoint semantic chunking. Implementation lives in rag.chunking.semantic."""
+    from rag.chunking.semantic import cosine_breakpoint_chunks
+
+    return cosine_breakpoint_chunks(doc, percentile=percentile, **kwargs)
 
 
 def contextualize(chunk: Chunk) -> Chunk:
@@ -148,7 +165,9 @@ CHUNKERS = {
     "fixed": fixed_size,
     "recursive": recursive,
     "parent_child": parent_child,
-    "semantic": semantic_by_heading,
+    "semantic": semantic_cosine,
+    "semantic_cosine": semantic_cosine,
+    "semantic_heading": semantic_by_heading,
 }
 
 

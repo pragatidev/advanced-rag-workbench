@@ -6,7 +6,7 @@ from pathlib import Path
 
 from rag.chunking import Chunk
 from rag.retrieve import Hit
-from rag.stores.base import STORE_DIR, StoreInfo
+from rag.stores.base import STORE_DIR, StoreInfo, as_embeddings
 
 
 class ChromaStore:
@@ -41,9 +41,10 @@ class ChromaStore:
             metadata={"hnsw:space": "cosine"},
         )
 
-    def add(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+    def add(self, chunks: list[Chunk], embeddings) -> None:
         if not chunks:
             return
+        embeddings = as_embeddings(chunks, embeddings)
         self.col.upsert(
             ids=[c.chunk_id for c in chunks],
             documents=[c.text for c in chunks],
@@ -59,14 +60,17 @@ class ChromaStore:
             embeddings=embeddings,
         )
 
-    def query(self, embedding: list[float], k: int = 5) -> list[Hit]:
+    def query(self, embedding: list[float], k: int = 5, where: dict | None = None) -> list[Hit]:
         if self.col.count() == 0:
             return []
-        out = self.col.query(
-            query_embeddings=[embedding],
-            n_results=min(k, self.col.count()),
-            include=["documents", "metadatas", "distances"],
-        )
+        kwargs = {
+            "query_embeddings": [embedding],
+            "n_results": min(k, self.col.count()),
+            "include": ["documents", "metadatas", "distances"],
+        }
+        if where:
+            kwargs["where"] = where
+        out = self.col.query(**kwargs)
         hits: list[Hit] = []
         ids = (out.get("ids") or [[]])[0]
         docs = (out.get("documents") or [[]])[0]
@@ -91,8 +95,11 @@ class ChromaStore:
         return hits
 
     def info(self) -> StoreInfo:
+        n = self.col.count()
         return StoreInfo(
             backend="chroma",
             persist_path=None if self.path is None else str(self.path),
-            note=f"collection={self.collection_name} count={self.col.count()}",
+            note=f"collection={self.collection_name} count={n}",
+            count=n,
+            collection=self.collection_name,
         )

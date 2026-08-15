@@ -28,6 +28,7 @@ def run_hybrid(question: str, k: int = 4, contextual: bool = True, persist: bool
         "pipeline": "hybrid",
         "question": question,
         "answer": answer,
+        "answer_source": "retrieved_text",
         "generator": gen,
         "store": store.info().__dict__,
         "hits": [

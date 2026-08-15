@@ -15,6 +15,25 @@ class StoreInfo:
     backend: str
     persist_path: str | None
     note: str
+    count: int = 0
+    collection: str = ""
+
+    def __str__(self) -> str:
+        path = self.persist_path or "(ephemeral)"
+        return (
+            f"{self.backend} collection={self.collection or '-'} "
+            f"count={self.count} path={path} {self.note}"
+        )
+
+
+def as_embeddings(chunks: list[Chunk], embeddings_or_embedder) -> list[list[float]]:
+    """Accept a vector list or an embedder with encode()/embed()."""
+    obj = embeddings_or_embedder
+    if hasattr(obj, "encode"):
+        return obj.encode([c.text for c in chunks]).tolist()
+    if hasattr(obj, "embed") and not isinstance(obj, (list, tuple)):
+        return [obj.embed(c.text).tolist() for c in chunks]
+    return obj
 
 
 class VectorStore(Protocol):
