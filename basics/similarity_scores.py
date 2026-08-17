@@ -26,6 +26,8 @@ texts = [
     "Shared passwords are forbidden.",
 ]
 vecs = [embedder.embed(text) for text in texts]
+for name, vec in zip(names, vecs):
+    print("norm", round(math.sqrt(sum(x * x for x in vec)), 3), name)
 rows = []
 for i, left in enumerate(names):
     for j, right in enumerate(names):
