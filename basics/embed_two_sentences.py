@@ -29,3 +29,11 @@ print("  first 6 numbers", [round(float(x), 3) for x in vec_far[:6]])
 print("similar pair", round(score_near, 3))
 print("unrelated pair", round(score_far, 3))
 print("story: the two revenue sentences sit nearer than revenue vs the password rule.")
+
+question = "How much did ACME make last quarter?"
+vec_q = embedder.embed(question)
+print("question", question)
+print("  vs near_a", round(cosine(vec_q, vec_a), 3))
+print("  vs near_b", round(cosine(vec_q, vec_b), 3))
+print("  vs far   ", round(cosine(vec_q, vec_far), 3))
+print("story: the question never says revenue, and it still lands nearest the revenue sentences.")
