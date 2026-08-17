@@ -14,6 +14,7 @@ near_b = "Prior quarter revenue was 314 million USD."
 far = "Shared passwords are forbidden."
 
 embedder = HashEmbedder()
+print("list length", HashEmbedder().dim, "numbers per sentence (the screen shows the first 6)")
 vec_a = embedder.embed(near_a)
 vec_b = embedder.embed(near_b)
 vec_far = embedder.embed(far)
