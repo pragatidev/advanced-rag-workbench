@@ -16,6 +16,16 @@ from rag.settings import Settings
 
 NODES = ("decide", "retrieve", "grade", "rewrite", "answer")
 
+# from node, to node, the condition that opens the edge. Execution order.
+EDGES = (
+    ("decide", "answer", "chitchat, needs_corpus is False, refuse"),
+    ("decide", "retrieve", "the question needs the corpus"),
+    ("retrieve", "grade", "always"),
+    ("grade", "answer", "Correct"),
+    ("grade", "rewrite", "Incorrect or Ambiguous"),
+    ("rewrite", "answer", "always"),
+)
+
 
 def run_loop(question: str, web_enabled: bool | None = None) -> dict:
     web = Settings.web_search_enabled if web_enabled is None else web_enabled
@@ -55,7 +65,7 @@ def run_loop(question: str, web_enabled: bool | None = None) -> dict:
     label = grade(question, hits)
     web_called = False
     used_question = question
-    if label == "Incorrect":
+    if label in ("Incorrect", "Ambiguous"):
         if web and WEB_SEARCH_ENABLED:
             maybe_web(question)
             web_called = True
