@@ -66,6 +66,18 @@ def test_privacy_doc_really_is_the_retention_answer_hop_2_missed():
     assert "redact national id before a chunk is sent to a model" in text
 
 
+def test_privacy_is_the_only_document_carrying_the_retention_rule():
+    # The lecture says on screen: "in this corpus, privacy.md is the ONLY document
+    # that carries the retention rule". Drop a second retention doc into the corpus
+    # and that sentence stops being true, so fail here instead of on camera.
+    carriers = sorted(
+        p.relative_to(ROOT).as_posix()
+        for p in (ROOT / "data").rglob("*.md")
+        if "retention" in p.read_text(encoding="utf-8").lower()
+    )
+    assert carriers == ["data/acme/policies/privacy.md"]
+
+
 def test_solution_matches_the_walked_file():
     solution = ROOT / "labs" / "lab_s11b_hop" / "solution" / "naive_hop.py"
     assert solution.read_text(encoding="utf-8") == PART_1.read_text(encoding="utf-8")
