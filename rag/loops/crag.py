@@ -28,3 +28,32 @@ def maybe_web(query: str) -> str | None:
     if not WEB_SEARCH_ENABLED:
         return None
     return f"(web search would run for: {query})"
+
+
+if __name__ == "__main__":
+    from rag.chunkers import Chunk
+    from rag.retrieve import Hit
+
+    def _hits(text: str) -> list[Hit]:
+        return [Hit(Chunk("c", "d", "t", text), 1.0, "x")]
+
+    print("empty", grade("anything", []))
+    print(
+        "catalog",
+        grade(
+            "TS-999",
+            _hits(
+                "TS-999 means the billing ledger rejected a duplicate invoice ID. It is not retryable"
+            ),
+        ),
+    )
+    print(
+        "thin",
+        grade("What does TS-999 mean?", _hits("TS-999 means duplicate invoice")),
+    )
+    print(
+        "warehouse",
+        grade("What does TS-999 mean?", _hits("Warehouse throughput improved.")),
+    )
+    print("WEB_SEARCH_ENABLED", WEB_SEARCH_ENABLED)
+    print("maybe_web", maybe_web("What is ACME revenue?"))
