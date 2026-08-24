@@ -163,3 +163,89 @@ def test_part_2_makes_no_model_call():
 def test_part_2_solution_matches_the_walked_file():
     solution = ROOT / "labs" / "lab_s11b_hop" / "solution" / "repaired_hop.py"
     assert solution.read_text(encoding="utf-8") == PART_2.read_text(encoding="utf-8")
+
+
+# --- S11B.4 puts the STARTER on screen too, at named line numbers. Pin those. ---
+
+STARTER = ROOT / "labs" / "lab_s11b_hop" / "starter" / "repaired_hop.py"
+
+
+def test_the_walked_file_is_the_length_the_vo_says_out_loud():
+    # The VO says "it is a hundred and eleven lines". If the file grows, that
+    # sentence is wrong on camera and every focusLines range below shifts.
+    assert len(PART_2.read_text(encoding="utf-8").splitlines()) == 111
+
+
+def test_the_focus_ranges_the_walkthrough_holds_still_frame_what_they_name():
+    lines = PART_2.read_text(encoding="utf-8").splitlines()
+
+    def at(one_indexed: int) -> str:
+        return lines[one_indexed - 1]
+
+    assert at(16) == "load_env()"
+    assert at(18).startswith("QUESTION = (")
+    assert at(30).startswith("STOPWORDS = frozenset(")
+    assert at(37).startswith("def carries(")
+    assert at(42).startswith("def carry_forward(")
+    assert at(52).startswith("def show(")
+    assert at(60).startswith("def _content(")
+    assert at(64).startswith("def _answering_sentence(")
+    assert at(85).startswith("def compose(")
+    assert at(99).startswith('print("k ="')
+    assert at(111).startswith('print("ANSWER:"')
+
+
+def test_the_starter_has_exactly_three_todos_where_the_vo_points():
+    lines = STARTER.read_text(encoding="utf-8").splitlines()
+
+    def at(one_indexed: int) -> str:
+        return lines[one_indexed - 1].strip()
+
+    # The VO says: "line 39 in carries, lines 45 to 46 in carry_forward,
+    # lines 89 to 90 in compose", and scrolls so all three are visible at once.
+    # Each TODO carries the marker on its first line and runs on to the next
+    # where the instruction needs two lines, which is what "45 to 46" means.
+    todo_starts = [i for i, line in enumerate(lines, 1) if line.strip().startswith("# TODO")]
+    assert todo_starts == [39, 45, 89]
+    assert at(46).startswith("#") and at(47) == "raise NotImplementedError"
+    assert at(90).startswith("#") and at(91) == "raise NotImplementedError"
+    assert at(40) == "raise NotImplementedError"
+    assert lines[36].startswith("def carries(")
+    assert lines[42].startswith("def carry_forward(")
+    assert lines[82].startswith("def compose(")
+    # Three functions missing, three and only three.
+    assert STARTER.read_text(encoding="utf-8").count("raise NotImplementedError") == 3
+
+
+def test_the_starter_gives_away_everything_except_those_three_functions():
+    starter = STARTER.read_text(encoding="utf-8")
+    walked = PART_2.read_text(encoding="utf-8")
+    # "Everything else in that starter is already written for you, including the
+    # retrieval calls and the sentence picker."
+    for shared in (
+        "def _answering_sentence(",
+        "if sentence.endswith(\"?\") or sentence.lstrip().startswith(\"#\"):",
+        "def show(",
+        "def _content(",
+        'run_ask(HOP_1, pipeline="naive", generate="extractive")',
+        'print("composed_from"',
+    ):
+        assert shared in starter and shared in walked
+    # And it does NOT ship the three answers.
+    for withheld in (
+        "return entity.lower() in sub_question.lower()",
+        "top_1, top_2 = hop1_hits[0], hop2_hits[0]",
+    ):
+        assert withheld in walked and withheld not in starter
+
+
+def test_the_starter_really_does_not_run_until_the_student_fills_it():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_s11b4_starter_probe", STARTER)
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except NotImplementedError:
+        return
+    raise AssertionError("the starter ran to completion, so it is not an exercise")
