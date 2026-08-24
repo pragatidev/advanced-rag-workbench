@@ -14,6 +14,7 @@ for q in (
     "Good morning, how are you?",
     "What does error code TS-999 mean?",
     "What are the main themes in this ACME corpus?",
+    "What SLA percentage does ACME guarantee enterprise customers during scheduled maintenance windows?",
 ):
     out = run_loop(q, web_enabled=False)
     print(q)
