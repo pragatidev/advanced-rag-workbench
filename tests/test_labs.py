@@ -19,6 +19,7 @@ REQUIRED = [
     "labs/lab_s9_query/part_3/hyde.py",
     "labs/lab_s10_route/part_3/router.py",
     "labs/lab_s11_crag/part_4/run_loop.py",
+    "labs/lab_s11b_hop/part_1/naive_hop.py",
     "labs/lab_s12_graph/part_4/run_graph.py",
     "labs/lab_s13_mm/part_2/docling_parse.py",
     "labs/lab_s14_eval/part_3/run_suite.py",
@@ -37,7 +38,7 @@ def test_every_curriculum_lab_exists():
 
 def test_checkpoint_folders_have_starter_and_solution():
     labs = sorted(p for p in (ROOT / "labs").iterdir() if p.is_dir() and p.name.startswith("lab_"))
-    assert len(labs) == 16
+    assert len(labs) == 17
     for lab in labs:
         assert (lab / "starter").is_dir(), lab
         assert (lab / "solution").is_dir(), lab
