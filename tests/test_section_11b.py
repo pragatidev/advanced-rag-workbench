@@ -81,3 +81,85 @@ def test_privacy_is_the_only_document_carrying_the_retention_rule():
 def test_solution_matches_the_walked_file():
     solution = ROOT / "labs" / "lab_s11b_hop" / "solution" / "naive_hop.py"
     assert solution.read_text(encoding="utf-8") == PART_1.read_text(encoding="utf-8")
+
+
+# --- S11B.4: the repair and the composition -------------------------------
+# Lecture S11B.4 reads a second captured run on screen: the repaired hop 2
+# query with ACME inside it, entity_carried True, privacy on top, and one
+# composed answer citing both hops. Pin every line of it.
+
+PART_2 = ROOT / "labs" / "lab_s11b_hop" / "part_2" / "repaired_hop.py"
+
+HOP_2_REPAIRED = (
+    "ACME's privacy and retention policy: what has to happen to a national id "
+    "before a chunk reaches a model?"
+)
+
+
+def _part_2():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_s11b4_probe", PART_2)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_repaired_hop_2_carries_the_entity_and_the_naive_one_does_not():
+    module = _part_2()
+    assert module.carries(HOP_2_REPAIRED, "ACME") is True
+    assert module.carries(CLAUSE_2, "ACME") is False
+    # The broken query stays in the file next to its repair. That is the lesson.
+    assert module.HOP_2_NAIVE == CLAUSE_2
+    assert module.HOP_2_REPAIRED == HOP_2_REPAIRED
+
+
+def test_carry_forward_swaps_only_when_the_entity_is_missing():
+    module = _part_2()
+    assert module.carry_forward(CLAUSE_1, "ACME", "REPAIR") == CLAUSE_1
+    assert module.carry_forward(CLAUSE_2, "ACME", "REPAIR") == "REPAIR"
+
+
+def test_the_repaired_hop_2_puts_the_retention_doc_on_top():
+    hits = run_ask(HOP_2_REPAIRED, pipeline="naive", generate="extractive")["hits"]
+    doc_ids = [h["doc_id"] for h in hits]
+    # The naive hop 2 returned q2_kpis / error_catalog / filing_q2_2023 and never
+    # privacy. One string changed and the search is pointed at the company again.
+    assert doc_ids == ["privacy", "faq", "access_control"]
+    assert doc_ids[0] == "privacy"
+
+
+def test_composed_answer_is_built_from_the_top_hit_of_each_hop():
+    module = _part_2()
+    hop_1 = run_ask(CLAUSE_1, pipeline="naive", generate="extractive")["hits"]
+    hop_2 = run_ask(HOP_2_REPAIRED, pipeline="naive", generate="extractive")["hits"]
+    assert hop_1[0]["chunk_id"] == "faq:fixed:0"
+    assert hop_2[0]["chunk_id"] == "privacy:fixed:0"
+    answer = module.compose(hop_1, hop_2)
+    assert answer == (
+        "The assistant redacts that field. [faq:fixed:0] "
+        "Retrieval must redact national id before a chunk is sent to a model. "
+        "[privacy:fixed:0]"
+    )
+    # Both citations, in hop order.
+    assert answer.index("[faq:fixed:0]") < answer.index("[privacy:fixed:0]")
+
+
+def test_six_retrieved_two_used_is_true_and_not_a_slogan():
+    hop_1 = run_ask(CLAUSE_1, pipeline="naive", generate="extractive")["hits"]
+    hop_2 = run_ask(HOP_2_REPAIRED, pipeline="naive", generate="extractive")["hits"]
+    assert len(hop_1) + len(hop_2) == 6
+    # compose reads exactly one chunk per hop, never a merged and resorted pile.
+    assert PART_2.read_text(encoding="utf-8").count("hop1_hits[0]") == 1
+    assert PART_2.read_text(encoding="utf-8").count("hop2_hits[0]") == 1
+
+
+def test_part_2_makes_no_model_call():
+    source = PART_2.read_text(encoding="utf-8")
+    for forbidden in ("rag.llm", "import chat", "openai", "requests"):
+        assert forbidden not in source
+
+
+def test_part_2_solution_matches_the_walked_file():
+    solution = ROOT / "labs" / "lab_s11b_hop" / "solution" / "repaired_hop.py"
+    assert solution.read_text(encoding="utf-8") == PART_2.read_text(encoding="utf-8")
