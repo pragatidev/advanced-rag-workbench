@@ -1,4 +1,8 @@
-"""Build a tiny entity graph over the ACME corpus. A toy on purpose."""
+"""Step one of a tiny graph: entities, the chunks they live in, and seed communities.
+
+TOY. Real GraphRAG extracts entities with a language model. This file uses a
+hand written SEED dictionary so the mechanism is readable and the run is free.
+"""
 from __future__ import annotations
 
 import sys
@@ -8,132 +12,95 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rag.corpus import load_documents
 from rag.chunkers import fixed_size
+from rag.corpus import load_documents
 
-# Entity name -> the strings that name it in the actual documents.
-# Hand written. A real GraphRAG index sends every chunk to a model and asks
-# what entities are in here; this dict is a string match and nothing more.
-SEED_TERMS = {
-    "TS-999": ["TS-999"],
-    "billing ledger": ["billing ledger"],
-    "duplicate invoice id": ["duplicate invoice id", "Duplicate invoice failures"],
-    "billing-ops": ["billing-ops"],
-    "national id": ["national id"],
-    "PII": ["PII"],
-    "redact": ["redact"],
-    "AC-2": ["AC-2"],
-    "tenant": ["tenant"],
-    "shared passwords": ["shared passwords"],
-    "revenue": ["revenue"],
-    "prior quarter revenue": ["prior quarter revenue"],
-    "seats by region": ["seats by region"],
+# The fake extractor. Entity name -> the strings that count as a mention.
+SEED = {
+    "TS-999": ("ts-999",),
+    "billing": ("billing",),
+    "national id": ("national id",),
+    "revenue": ("revenue",),
+    "tenant": ("tenant",),
+    "audit": ("audit",),
 }
 
 
-def assert_seeds_are_real(docs) -> None:
-    """Every surface string must exist in the corpus. A graph built on a typo
-    looks fine and is wrong, so stop and name the term that matched nothing."""
-    corpus = "\n".join(doc.text for doc in docs).lower()
-    missing = sorted(
-        f"{entity} -> {surface}"
-        for entity, surfaces in SEED_TERMS.items()
-        for surface in surfaces
-        if surface.lower() not in corpus
-    )
-    if missing:
-        raise SystemExit(
-            "SEED TERM NOT IN CORPUS:\n  " + "\n  ".join(missing)
-        )
-
-
-def build_members(chunks) -> dict[str, list[str]]:
-    """For every chunk, for every seed term: if the term is in the chunk text,
-    record the chunk id under that entity. Those are the nodes and their members."""
-    members: dict[str, set[str]] = {}
-    for chunk in chunks:
-        haystack = chunk.text.lower()
-        for entity, surfaces in SEED_TERMS.items():
-            if any(surface.lower() in haystack for surface in surfaces):
-                members.setdefault(entity, set()).add(chunk.chunk_id)
-    return {entity: sorted(ids) for entity, ids in sorted(members.items())}
-
-
-def build_edges(members: dict[str, list[str]]) -> dict[tuple[str, str], int]:
-    """Two entities get an edge when they show up in the same chunk. Not the
-    same document. The same eighty word strip. Weight is the shared chunk count."""
-    names = sorted(members)
-    edges: dict[tuple[str, str], int] = {}
-    for i, left in enumerate(names):
-        for right in names[i + 1 :]:
-            shared = set(members[left]) & set(members[right])
-            if shared:
-                edges[(left, right)] = len(shared)
-    return dict(sorted(edges.items()))
-
-
-def connected_components(
-    names: list[str], edges: dict[tuple[str, str], int]
-) -> list[list[str]]:
-    """Start at a node, take everything reachable from it, that is one community.
-    Repeat until every node has a home. Leiden this is not."""
-    adjacency: dict[str, set[str]] = {name: set() for name in names}
-    for left, right in edges:
-        adjacency[left].add(right)
-        adjacency[right].add(left)
-    seen: set[str] = set()
-    groups: list[list[str]] = []
-    for start in sorted(names):
-        if start in seen:
-            continue
-        stack = [start]
-        group: set[str] = set()
-        while stack:
-            node = stack.pop()
-            if node in seen:
-                continue
-            seen.add(node)
-            group.add(node)
-            stack.extend(sorted(adjacency[node] - seen))
-        groups.append(sorted(group))
-    return groups
-
-
-def docs_of(members: dict[str, list[str]], entities: list[str]) -> list[str]:
-    """chunk_id is doc_id:fixed:n, so the doc ids fall straight out of the members."""
-    return sorted({
-        chunk_id.split(":")[0] for entity in entities for chunk_id in members[entity]
-    })
-
-
-def main() -> None:
-    docs = load_documents()
-    assert_seeds_are_real(docs)
-
-    chunks: list = []
-    for doc in docs:
+def load_chunks():
+    """The same cut the naive pipeline uses: fixed size 80, no overlap."""
+    chunks = []
+    for doc in load_documents():
         chunks.extend(fixed_size(doc, size=80, overlap=0))
+    return chunks
 
+
+def build_members(chunks):
+    """entity -> the chunk ids that mention it. This is the whole index."""
+    members = {name: [] for name in SEED}
+    for chunk in chunks:
+        text = chunk.text.lower()
+        for name, needles in SEED.items():
+            if any(needle in text for needle in needles):
+                members[name].append(chunk.chunk_id)
+    return members
+
+
+def build_edges(chunks, members):
+    """Two entities sharing a chunk get a link. Weight is how many chunks."""
+    in_chunk = {chunk.chunk_id: [] for chunk in chunks}
+    for name, chunk_ids in members.items():
+        for chunk_id in chunk_ids:
+            in_chunk[chunk_id].append(name)
+    edges = {}
+    for chunk_id, names in in_chunk.items():
+        names = sorted(names)
+        for i, left in enumerate(names):
+            for right in names[i + 1:]:
+                edges[(left, right)] = edges.get((left, right), 0) + 1
+    return edges
+
+
+def build_communities(members, edges):
+    """Seed communities: entities you can reach through shared chunks."""
+    parent = {name: name for name in members}
+
+    def find(name):
+        while parent[name] != name:
+            parent[name] = parent[parent[name]]
+            name = parent[name]
+        return name
+
+    for left, right in edges:
+        parent[find(left)] = find(right)
+    groups = {}
+    for name in members:
+        groups.setdefault(find(name), []).append(name)
+    return [sorted(names) for _, names in sorted(groups.items())]
+
+
+def main():
+    chunks = load_chunks()
     members = build_members(chunks)
-    edges = build_edges(members)
-    communities = connected_components(sorted(members), edges)
+    edges = build_edges(chunks, members)
+    communities = build_communities(members, edges)
 
-    print(f"CORPUS   {len(docs)} documents, {len(chunks)} chunks (fixed, size=80, overlap=0)")
-    print(f"SEEDS    {len(SEED_TERMS)} terms, hand written, not model extracted")
-
-    print(f"\nNODES    {len(members)}")
-    for entity, ids in members.items():
-        print(f"  {entity:<22} {len(ids)} chunks")
-
-    print(f"\nEDGES    {len(edges)} pairs share at least one chunk")
-
-    print(f"\nCOMMUNITIES  {len(communities)}")
-    for i, entities in enumerate(communities):
-        print(f"  community_{i}")
-        print(f"    entities: {', '.join(entities)}")
-        print(f"    docs:     {', '.join(docs_of(members, entities))}")
-
-    print("\nCLUSTERING   connected components, not Leiden")
+    print("chunks", len(chunks))
+    print("extracted_by seed_dict   llm_extract_calls 0")
+    print()
+    print("NODES")
+    for name in sorted(members):
+        chunk_ids = members[name]
+        print(f"  {name}  chunks {len(chunk_ids)}")
+        for chunk_id in chunk_ids:
+            print(f"      {chunk_id}")
+    print()
+    print("EDGES")
+    for (left, right), weight in sorted(edges.items()):
+        print(f"  {left} -- {right}   shared_chunks {weight}")
+    print()
+    print("COMMUNITIES")
+    for i, names in enumerate(communities):
+        print(f"  community_{i}  members: {', '.join(names)}")
 
 
 if __name__ == "__main__":

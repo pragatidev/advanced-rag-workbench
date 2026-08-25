@@ -155,111 +155,119 @@ def _part_1_module():
     return module
 
 
-def _part_1_chunks():
-    return [c for d in load_documents() for c in __import__(
-        "rag.chunkers", fromlist=["fixed_size"]
-    ).fixed_size(d, size=80, overlap=0)]
-
-
-def test_s12_3_the_import_block_really_is_lines_1_through_12():
-    """SCREEN cue: 'Hold on the import block, lines 1 through 12.'"""
+def test_s12_3_the_import_block_is_lines_8_through_16():
+    """SCREEN cue: 'highlight the import block, lines 8 through 18.'"""
     lines = PART_1.read_text(encoding="utf-8").splitlines()
-    assert lines[6].startswith("ROOT = Path(__file__).resolve().parents[3]")
-    assert lines[7] == "if str(ROOT) not in sys.path:"
-    assert lines[8] == "    sys.path.insert(0, str(ROOT))"
-    # VO names load_documents first, then fixed_size. Screen order must agree.
-    assert lines[10] == "from rag.corpus import load_documents"
-    assert lines[11] == "from rag.chunkers import fixed_size"
-    assert lines[12] == ""
+    assert lines[7] == "import sys"
+    assert lines[8] == "from pathlib import Path"
+    assert lines[10].startswith("ROOT = Path(__file__).resolve().parents[3]")
+    assert lines[11] == "if str(ROOT) not in sys.path:"
+    assert lines[12] == "    sys.path.insert(0, str(ROOT))"
+    # VO names load_documents and fixed_size as "the only two that matter".
+    assert lines[14] == "from rag.chunkers import fixed_size"
+    assert lines[15] == "from rag.corpus import load_documents"
+    assert lines[17].startswith("# The fake extractor")
 
 
-def test_s12_3_every_seed_term_appears_verbatim_in_the_corpus():
-    """VO: 'Every seed term is checked against the corpus before anything is built.'"""
+def test_s12_3_the_seed_dictionary_is_six_entries_that_all_live_in_the_corpus():
+    """VO: 'six of them, chosen because they already live in the ACME corpus'."""
     module = _part_1_module()
-    module.assert_seeds_are_real(load_documents())  # must not raise
-    assert len(module.SEED_TERMS) == 13
-    for required in [
-        "TS-999", "billing ledger", "duplicate invoice id", "billing-ops",
-        "national id", "PII", "redact", "AC-2", "tenant", "shared passwords",
-        "revenue", "prior quarter revenue", "seats by region",
-    ]:
-        assert required in module.SEED_TERMS
+    assert list(module.SEED) == [
+        "TS-999", "billing", "national id", "revenue", "tenant", "audit"
+    ]
+    corpus = "\n".join(d.text for d in load_documents()).lower()
+    for needles in module.SEED.values():
+        for needle in needles:
+            assert needle == needle.lower()
+            assert needle in corpus
 
 
-def test_s12_3_the_guard_rail_stops_and_names_the_term_that_matched_nothing():
-    """VO: 'It stops and names the term that matched nothing.'"""
-    import pytest
-
+def test_s12_3_the_cut_is_the_same_ten_strips_the_naive_pipeline_uses():
+    """VO: 'the same chunk ids you saw in the last lecture'."""
     module = _part_1_module()
-    module.SEED_TERMS["typo entity"] = ["TS-9999 not in any file"]
-    try:
-        with pytest.raises(SystemExit) as caught:
-            module.assert_seeds_are_real(load_documents())
-        assert "typo entity" in str(caught.value)
-        assert "TS-9999 not in any file" in str(caught.value)
-    finally:
-        del module.SEED_TERMS["typo entity"]
+    chunks = module.load_chunks()
+    assert len(chunks) == 10
+    assert [c.chunk_id for c in chunks] == [
+        c.chunk_id for c in chunk_corpus(load_documents(), "fixed", size=80, overlap=0)
+    ]
 
 
 def test_s12_3_the_graph_the_lecture_holds_on_screen():
     """Every number the VO reads off the run, pinned."""
     module = _part_1_module()
-    members = module.build_members(_part_1_chunks())
-    edges = module.build_edges(members)
-    communities = module.connected_components(sorted(members), edges)
+    chunks = module.load_chunks()
+    members = module.build_members(chunks)
+    edges = module.build_edges(chunks, members)
+    communities = module.build_communities(members, edges)
 
-    assert len(members) == 13
-    assert len(edges) == 21
-    assert {e: len(ids) for e, ids in members.items()} == {
-        "AC-2": 1, "PII": 1, "TS-999": 3, "billing ledger": 1, "billing-ops": 2,
-        "duplicate invoice id": 2, "national id": 2, "prior quarter revenue": 1,
-        "redact": 2, "revenue": 2, "seats by region": 1, "shared passwords": 1,
-        "tenant": 1,
+    assert members == {
+        "TS-999": ["error_catalog:fixed:0", "error_catalog:fixed:1", "faq:fixed:0"],
+        "billing": [
+            "error_catalog:fixed:0", "error_catalog:fixed:1",
+            "privacy:fixed:0", "faq:fixed:0",
+        ],
+        "national id": ["privacy:fixed:0", "faq:fixed:0"],
+        "revenue": ["filing_q2_2023:fixed:1", "privacy:fixed:0"],
+        "tenant": ["access_control:fixed:0"],
+        "audit": ["access_control:fixed:0"],
+    }
+    assert dict(sorted(edges.items())) == {
+        ("TS-999", "billing"): 3,
+        ("TS-999", "national id"): 1,
+        ("audit", "tenant"): 1,
+        ("billing", "national id"): 2,
+        ("billing", "revenue"): 1,
+        ("national id", "revenue"): 1,
     }
     assert communities == [
-        ["AC-2", "shared passwords", "tenant"],
-        [
-            "PII", "TS-999", "billing ledger", "billing-ops",
-            "duplicate invoice id", "national id", "prior quarter revenue",
-            "redact", "revenue",
-        ],
-        ["seats by region"],
+        ["TS-999", "billing", "national id", "revenue"],
+        ["audit", "tenant"],
     ]
-    assert module.docs_of(members, communities[0]) == ["access_control"]
-    assert module.docs_of(members, communities[1]) == [
-        "error_catalog", "faq", "filing_q2_2023", "privacy"
-    ]
-    assert module.docs_of(members, communities[2]) == ["figure_seats"]
 
 
-def test_s12_3_the_big_community_is_glued_by_the_hand_written_themes_sentence():
-    """Realizer fact for the writer: community_1 is one blob because privacy:fixed:0
-    carries BOTH 'PII' and the pre-written 'sequential revenue reporting' sentence.
-    A human did sort part of this graph. Pinned so the lecture cannot drift off it."""
+def test_s12_3_ts_999_is_three_chunks_against_four_editor_matches():
+    """VO: 'the editor tells you four... That number will never match the screen.'
+    Four literal TS-999 matches inside error_catalog.md, landing on two chunk ids,
+    plus one chunk in the FAQ, so the node reads three."""
     module = _part_1_module()
-    members = module.build_members(_part_1_chunks())
-    bridge = "privacy:fixed:0"
-    on_bridge = sorted(e for e, ids in members.items() if bridge in ids)
-    assert on_bridge == ["PII", "national id", "redact", "revenue"]
-    text = {c.chunk_id: c.text for c in _part_1_chunks()}[bridge]
-    assert "Themes across this corpus: sequential revenue reporting" in text
+    members = module.build_members(module.load_chunks())
+    catalog = (ROOT / "data" / "acme" / "runbooks" / "error_catalog.md").read_text(
+        encoding="utf-8"
+    )
+    assert catalog.count("TS-999") == 4
+    assert len(members["TS-999"]) == 3
+    # VO: 'One of them is not the error catalog at all.'
+    assert "faq:fixed:0" in members["TS-999"]
+    faq = (ROOT / "data" / "acme" / "faq" / "support.md").read_text(encoding="utf-8")
+    assert "Duplicate invoice failures are TS-999." in faq
+
+
+def test_s12_3_revenue_and_billing_do_share_the_privacy_chunk():
+    """REALIZER FACT, contradicts the r3 VO line 'revenue and billing never appear
+    in the same chunk anywhere in this corpus'. They do: privacy:fixed:0 carries the
+    hand-written themes sentence naming both. The EDGES block prints the direct link."""
+    module = _part_1_module()
+    chunks = module.load_chunks()
+    members = module.build_members(chunks)
+    shared = set(members["revenue"]) & set(members["billing"])
+    assert shared == {"privacy:fixed:0"}
+    bridge = {c.chunk_id: c.text for c in chunks}["privacy:fixed:0"]
+    assert "Themes across this corpus: sequential revenue reporting, billing integrity" in bridge
+    edges = module.build_edges(chunks, members)
+    assert edges[("billing", "revenue")] == 1
 
 
 def test_s12_3_the_run_prints_exactly_what_the_lecture_screens():
     out = subprocess.run(
         [sys.executable, str(PART_1)], cwd=ROOT, capture_output=True, text=True, check=True
     ).stdout
-    assert out.startswith(
-        "CORPUS   7 documents, 10 chunks (fixed, size=80, overlap=0)\n"
-    )
-    assert "SEEDS    13 terms, hand written, not model extracted" in out
-    assert "NODES    13" in out
-    assert "  TS-999                 3 chunks" in out
-    assert "EDGES    21 pairs share at least one chunk" in out
-    assert "COMMUNITIES  3" in out
-    assert "    entities: AC-2, shared passwords, tenant" in out
-    assert "    docs:     error_catalog, faq, filing_q2_2023, privacy" in out
-    assert out.rstrip().endswith("CLUSTERING   connected components, not Leiden")
+    assert out.startswith("chunks 10\n")
+    assert "extracted_by seed_dict   llm_extract_calls 0" in out
+    assert "  TS-999  chunks 3" in out
+    assert "      faq:fixed:0" in out
+    assert "  billing -- revenue   shared_chunks 1" in out
+    assert "  community_0  members: TS-999, billing, national id, revenue" in out
+    assert out.rstrip().endswith("community_1  members: audit, tenant")
     # No key, no network: the file imports nothing that reaches a provider.
     source = PART_1.read_text(encoding="utf-8")
     assert "rag.llm" not in source and "rag.embed" not in source
@@ -270,11 +278,11 @@ def test_s12_3_the_starter_withholds_the_three_build_functions_and_nothing_else(
     assert starter.count("raise NotImplementedError") == 3
     for withheld in ["TODO 1", "TODO 2", "TODO 3"]:
         assert withheld in starter
-    # The dict, the guard rail and the printing are given, so the student edits
-    # only the graph logic.
-    assert "def assert_seeds_are_real" in starter
-    assert "SEED TERM NOT IN CORPUS" in starter
-    assert "CLUSTERING   connected components, not Leiden" in starter
+    # The dict, the cut and the printing are given, so the student edits only
+    # the graph logic.
+    assert "SEED = {" in starter
+    assert "def load_chunks" in starter
+    assert 'print("extracted_by seed_dict   llm_extract_calls 0")' in starter
     run = subprocess.run(
         [sys.executable, str(STARTER_1)], cwd=ROOT, capture_output=True, text=True
     )
