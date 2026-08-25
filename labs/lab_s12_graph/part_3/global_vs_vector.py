@@ -37,8 +37,29 @@ from rag.embedders import HashEmbedder  # noqa: E402
 from rag.stores.chroma_store import ChromaStore  # noqa: E402
 
 QUESTION = "What are the main themes in this ACME corpus?"
-FOUR_THEMES = ("sequential", "billing", "least-privilege", "pii")
 HAND_WRITTEN = "Themes across this corpus:"
+
+# The grading rule, on screen. A theme counts as covered when the text names it
+# in any of these words. Same rule for retrieved strips and for summaries.
+THEME_TERMS = {
+    "sequential revenue reporting": ("sequential", "revenue", "quarter"),
+    "billing integrity": ("billing", "invoice", "ts-999"),
+    "least-privilege access": ("least privilege", "least-privilege", "privileged", "tenant", "audit"),
+    "PII minimization": ("pii", "national id", "redact", "retention"),
+}
+
+
+def grade(text):
+    """The one instrument. Which of the four themes does this text name?"""
+    low = text.lower()
+    covered = []
+    for theme, terms in THEME_TERMS.items():
+        hit = next((t for t in terms if t in low), None)
+        print(f"    {theme:30s} {'COVERED  ' + hit if hit else 'MISSING'}")
+        if hit:
+            covered.append(theme)
+    print(f"  themes covered {len(covered)} of {len(THEME_TERMS)}")
+    return covered
 
 
 def search(docs, question, collection, k=3):
@@ -49,12 +70,8 @@ def search(docs, question, collection, k=3):
     store.reset()
     store.add(chunks, embedder.encode([c.text for c in chunks]).tolist())
     hits = store.query(embedder.embed(question).tolist(), k=k)
+    print(f"  collection {collection}   chunks indexed {len(chunks)}")
     return [(h.chunk.chunk_id, h.score, h.chunk.text) for h in hits]
-
-
-def names_four_themes(text):
-    low = text.lower()
-    return all(word in low for word in FOUR_THEMES)
 
 
 def report(hits, mark_hand_written=False):
@@ -63,23 +80,22 @@ def report(hits, mark_hand_written=False):
         if mark_hand_written and HAND_WRITTEN.lower() in text.lower():
             line += "   <- carries the hand written themes sentence"
         print(line)
-    joined = " ".join(text for _, _, text in hits)
-    print("  four themes in the retrieved strips:", names_four_themes(joined))
+    return grade(" ".join(text for _, _, text in hits))
 
 
 def cut_hand_written(docs):
-    """Delete the one sentence nobody writes for a real corpus."""
-    removed = 0
+    """Delete the one sentence nobody writes for a real corpus. In memory only."""
     for doc in docs:
         if HAND_WRITTEN in doc.text:
             before = len(doc.text.split())
             doc.text = doc.text.split(HAND_WRITTEN)[0].rstrip() + "\n"
-            removed = before - len(doc.text.split())
-            print(f"  removed {removed} words from {doc.path}")
+            print(f"  removed {before - len(doc.text.split())} words from {doc.path} in memory")
+            on_disk = next(d for d in load_documents() if d.doc_id == doc.doc_id)
+            print(f"  {doc.path} on disk still {len(on_disk.text.split())} words, not edited")
     return docs
 
 
-def summarize_communities(docs):
+def read_summaries(docs):
     """Part one's graph and part two's summarizer, run on the corpus we hand them."""
     chunks = []
     for doc in docs:
@@ -87,12 +103,16 @@ def summarize_communities(docs):
     members = build_members(chunks)
     communities = build_communities(members, build_edges(chunks, members))
     by_id = {chunk.chunk_id: chunk.text for chunk in chunks}
+    summaries = []
     for i, entities in enumerate(communities):
         chunk_ids = community_chunks(entities, members)
-        texts = [by_id[chunk_id] for chunk_id in chunk_ids]
+        summary = _extractive(entities, [by_id[cid] for cid in chunk_ids])
+        summaries.append(summary)
         print(f"  community_{i}  entities: {', '.join(entities)}")
-        print(f"    summary: {_extractive(entities, texts)}")
-    return communities
+        print(f"    summary: {summary}")
+    print(f"  communities read {len(communities)}   chunks searched at question time 0")
+    print("  llm_extract_calls 0   seed dictionary, not a model extract")
+    return grade(" ".join(summaries))
 
 
 def main():
@@ -109,9 +129,7 @@ def main():
     print()
 
     print("BLOCK 3  global mode on the same cut corpus, reading summaries")
-    communities = summarize_communities(docs)
-    print(f"  communities read {len(communities)}   chunks searched at question time 0")
-    print("  llm_extract_calls 0   seed dictionary, not a model extract")
+    read_summaries(docs)
 
 
 if __name__ == "__main__":
