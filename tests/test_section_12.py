@@ -137,3 +137,146 @@ def test_s12_1_the_screened_receipts_are_what_the_files_really_print():
         "answer: Sequential revenue reporting, billing integrity, "
         "least-privilege access, and PII minimization." in fourth
     )
+
+
+# --- S12.3 pins: the lab part 1 file and every number its run prints ---------
+
+LAB_S12_GRAPH = ROOT / "labs" / "lab_s12_graph"
+PART_1 = LAB_S12_GRAPH / "part_1" / "build_tiny_graph.py"
+STARTER_1 = LAB_S12_GRAPH / "starter" / "build_tiny_graph.py"
+
+
+def _part_1_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("s12_3_build_tiny_graph", PART_1)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _part_1_chunks():
+    return [c for d in load_documents() for c in __import__(
+        "rag.chunkers", fromlist=["fixed_size"]
+    ).fixed_size(d, size=80, overlap=0)]
+
+
+def test_s12_3_the_import_block_really_is_lines_1_through_12():
+    """SCREEN cue: 'Hold on the import block, lines 1 through 12.'"""
+    lines = PART_1.read_text(encoding="utf-8").splitlines()
+    assert lines[6].startswith("ROOT = Path(__file__).resolve().parents[3]")
+    assert lines[7] == "if str(ROOT) not in sys.path:"
+    assert lines[8] == "    sys.path.insert(0, str(ROOT))"
+    # VO names load_documents first, then fixed_size. Screen order must agree.
+    assert lines[10] == "from rag.corpus import load_documents"
+    assert lines[11] == "from rag.chunkers import fixed_size"
+    assert lines[12] == ""
+
+
+def test_s12_3_every_seed_term_appears_verbatim_in_the_corpus():
+    """VO: 'Every seed term is checked against the corpus before anything is built.'"""
+    module = _part_1_module()
+    module.assert_seeds_are_real(load_documents())  # must not raise
+    assert len(module.SEED_TERMS) == 13
+    for required in [
+        "TS-999", "billing ledger", "duplicate invoice id", "billing-ops",
+        "national id", "PII", "redact", "AC-2", "tenant", "shared passwords",
+        "revenue", "prior quarter revenue", "seats by region",
+    ]:
+        assert required in module.SEED_TERMS
+
+
+def test_s12_3_the_guard_rail_stops_and_names_the_term_that_matched_nothing():
+    """VO: 'It stops and names the term that matched nothing.'"""
+    import pytest
+
+    module = _part_1_module()
+    module.SEED_TERMS["typo entity"] = ["TS-9999 not in any file"]
+    try:
+        with pytest.raises(SystemExit) as caught:
+            module.assert_seeds_are_real(load_documents())
+        assert "typo entity" in str(caught.value)
+        assert "TS-9999 not in any file" in str(caught.value)
+    finally:
+        del module.SEED_TERMS["typo entity"]
+
+
+def test_s12_3_the_graph_the_lecture_holds_on_screen():
+    """Every number the VO reads off the run, pinned."""
+    module = _part_1_module()
+    members = module.build_members(_part_1_chunks())
+    edges = module.build_edges(members)
+    communities = module.connected_components(sorted(members), edges)
+
+    assert len(members) == 13
+    assert len(edges) == 21
+    assert {e: len(ids) for e, ids in members.items()} == {
+        "AC-2": 1, "PII": 1, "TS-999": 3, "billing ledger": 1, "billing-ops": 2,
+        "duplicate invoice id": 2, "national id": 2, "prior quarter revenue": 1,
+        "redact": 2, "revenue": 2, "seats by region": 1, "shared passwords": 1,
+        "tenant": 1,
+    }
+    assert communities == [
+        ["AC-2", "shared passwords", "tenant"],
+        [
+            "PII", "TS-999", "billing ledger", "billing-ops",
+            "duplicate invoice id", "national id", "prior quarter revenue",
+            "redact", "revenue",
+        ],
+        ["seats by region"],
+    ]
+    assert module.docs_of(members, communities[0]) == ["access_control"]
+    assert module.docs_of(members, communities[1]) == [
+        "error_catalog", "faq", "filing_q2_2023", "privacy"
+    ]
+    assert module.docs_of(members, communities[2]) == ["figure_seats"]
+
+
+def test_s12_3_the_big_community_is_glued_by_the_hand_written_themes_sentence():
+    """Realizer fact for the writer: community_1 is one blob because privacy:fixed:0
+    carries BOTH 'PII' and the pre-written 'sequential revenue reporting' sentence.
+    A human did sort part of this graph. Pinned so the lecture cannot drift off it."""
+    module = _part_1_module()
+    members = module.build_members(_part_1_chunks())
+    bridge = "privacy:fixed:0"
+    on_bridge = sorted(e for e, ids in members.items() if bridge in ids)
+    assert on_bridge == ["PII", "national id", "redact", "revenue"]
+    text = {c.chunk_id: c.text for c in _part_1_chunks()}[bridge]
+    assert "Themes across this corpus: sequential revenue reporting" in text
+
+
+def test_s12_3_the_run_prints_exactly_what_the_lecture_screens():
+    out = subprocess.run(
+        [sys.executable, str(PART_1)], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout
+    assert out.startswith(
+        "CORPUS   7 documents, 10 chunks (fixed, size=80, overlap=0)\n"
+    )
+    assert "SEEDS    13 terms, hand written, not model extracted" in out
+    assert "NODES    13" in out
+    assert "  TS-999                 3 chunks" in out
+    assert "EDGES    21 pairs share at least one chunk" in out
+    assert "COMMUNITIES  3" in out
+    assert "    entities: AC-2, shared passwords, tenant" in out
+    assert "    docs:     error_catalog, faq, filing_q2_2023, privacy" in out
+    assert out.rstrip().endswith("CLUSTERING   connected components, not Leiden")
+    # No key, no network: the file imports nothing that reaches a provider.
+    source = PART_1.read_text(encoding="utf-8")
+    assert "rag.llm" not in source and "rag.embed" not in source
+
+
+def test_s12_3_the_starter_withholds_the_three_build_functions_and_nothing_else():
+    starter = STARTER_1.read_text(encoding="utf-8")
+    assert starter.count("raise NotImplementedError") == 3
+    for withheld in ["TODO 1", "TODO 2", "TODO 3"]:
+        assert withheld in starter
+    # The dict, the guard rail and the printing are given, so the student edits
+    # only the graph logic.
+    assert "def assert_seeds_are_real" in starter
+    assert "SEED TERM NOT IN CORPUS" in starter
+    assert "CLUSTERING   connected components, not Leiden" in starter
+    run = subprocess.run(
+        [sys.executable, str(STARTER_1)], cwd=ROOT, capture_output=True, text=True
+    )
+    assert run.returncode == 1
+    assert "TODO 1: build the nodes and their members" in run.stderr
