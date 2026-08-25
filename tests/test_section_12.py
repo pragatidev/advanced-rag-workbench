@@ -382,6 +382,154 @@ def test_s12_4_the_json_on_disk_is_the_global_index_part_4_reads():
     assert written["community_1"]["chunks"] == ["access_control:fixed:0"]
 
 
+PART_3 = LAB_S12_GRAPH / "part_3" / "global_vs_vector.py"
+
+
+def _part_3_module():
+    return _load("s12_5_global_vs_vector", PART_3)
+
+
+def test_s12_5_the_path_block_is_lines_14_through_32():
+    """SCREEN cue: 'highlight the sys.path block, lines 14 to 32.' Everything the
+    VO reads off that block, in the order it reads it."""
+    lines = PART_3.read_text(encoding="utf-8").splitlines()
+    assert lines[13] == "import sys"
+    assert lines[14] == "from pathlib import Path"
+    # VO: 'Repo root three folders up so the rag package imports.'
+    assert lines[17].startswith("ROOT = HERE.parents[2]")
+    # VO: 'then part one and part two on the path by folder,
+    #      because labs is not a Python package.'
+    assert lines[20].startswith("# labs/ is not a package")
+    assert lines[21] == 'for folder in ("part_1", "part_2"):'
+    # VO: 'build_members, build_edges and build_communities come from part one.'
+    assert lines[26] == "from build_tiny_graph import (  # noqa: E402"
+    # VO: 'community_chunks and the extractive summarizer come from part two.'
+    assert lines[31].startswith("from community_summaries import _extractive, community_chunks")
+
+
+def test_s12_5_nothing_on_screen_is_a_second_copy_of_the_graph():
+    """VO: 'I am not rewriting the graph here. If the graph on this screen
+    disagrees with the one you built in part one, that is a bug, not a lesson.'"""
+    source = PART_3.read_text(encoding="utf-8")
+    for name in ("build_members", "build_edges", "build_communities"):
+        assert f"def {name}" not in source
+    assert "def _extractive" not in source
+    assert "SEED = {" not in source
+    assert "rag.graph.tiny" not in source
+
+
+def test_s12_5_the_three_constants_the_vo_holds_on_screen():
+    module = _part_3_module()
+    assert module.QUESTION == "What are the main themes in this ACME corpus?"
+    # VO: 'four words we will hunt for: sequential, billing, least privilege, pii.'
+    assert module.FOUR_THEMES == ("sequential", "billing", "least-privilege", "pii")
+    # VO: 'Themes across this corpus, with a colon. It is the whole lecture.'
+    assert module.HAND_WRITTEN == "Themes across this corpus:"
+    corpus = "\n".join(d.text for d in load_documents())
+    assert corpus.count(module.HAND_WRITTEN) == 1
+
+
+def test_s12_5_the_hand_written_sentence_is_the_only_thing_block_2_changes():
+    """VO: 'It prints how many words it deleted. Nothing else changes.' And the
+    cut is in memory only: the student's privacy.md is never edited on disk."""
+    module = _part_3_module()
+    before = {d.doc_id: d.text for d in load_documents()}
+    docs = module.cut_hand_written(load_documents())
+    changed = [d.doc_id for d in docs if d.text != before[d.doc_id]]
+    assert changed == ["privacy"]
+    cut = next(d for d in docs if d.doc_id == "privacy")
+    assert module.HAND_WRITTEN not in cut.text
+    # VO: 'Twenty nine words.'
+    assert len(before["privacy"].split()) - len(cut.text.split()) == 29
+    assert module.HAND_WRITTEN in (
+        ROOT / "data" / "acme" / "policies" / "privacy.md"
+    ).read_text(encoding="utf-8")
+
+
+def test_s12_5_global_mode_never_takes_a_question():
+    """VO: 'Notice what is missing from that function. There is no question in
+    it. Nothing gets searched.'"""
+    import inspect
+
+    module = _part_3_module()
+    sig = inspect.signature(module.summarize_communities)
+    assert list(sig.parameters) == ["docs"]
+    body = inspect.getsource(module.summarize_communities)
+    assert "QUESTION" not in body
+    assert "search" not in body
+
+
+def test_s12_5_the_run_prints_exactly_what_the_lecture_screens():
+    """Every line of all three blocks the VO reads off the terminal, pinned."""
+    out = subprocess.run(
+        [sys.executable, str(PART_3)], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout
+    assert out.startswith("QUESTION What are the main themes in this ACME corpus?\n")
+
+    # BLOCK 1: vector wins, and the flag says why.
+    assert "BLOCK 1  vector search, corpus exactly as it ships" in out
+    assert "  filing_q2_2023:fixed:1   0.3313" in out
+    assert (
+        "  privacy:fixed:0          0.3156   "
+        "<- carries the hand written themes sentence" in out
+    )
+    assert "  figure_seats:fixed:0     0.2673" in out
+    assert "  four themes in the retrieved strips: True" in out
+
+    # BLOCK 2: 29 words out and the same run goes red.
+    assert "BLOCK 2  the same search, with that one sentence deleted" in out
+    assert "  removed 29 words from data/acme/policies/privacy.md" in out
+    # VO: 'Filing chunk one is sitting at exactly the same 0.3313.'
+    assert out.count("  filing_q2_2023:fixed:1   0.3313") == 2
+    assert "  filing_q2_2023:fixed:0   0.2572" in out
+    assert "  four themes in the retrieved strips: False" in out
+    # VO: 'Privacy is gone from the list entirely.'
+    assert out.count("privacy:fixed:0") == 1
+
+    # BLOCK 3: three summaries, nothing searched.
+    assert "BLOCK 3  global mode on the same cut corpus, reading summaries" in out
+    assert "  community_0  entities: TS-999, billing, national id" in out
+    assert "    summary: TS-999 is not retryable. Duplicate invoice failures are TS-999." in out
+    assert "  community_1  entities: revenue" in out
+    assert "  community_2  entities: audit, tenant" in out
+    assert (
+        "    summary: Shared runbooks are tagged tenant=shared. "
+        "Privileged actions write an audit row." in out
+    )
+    assert "  communities read 3   chunks searched at question time 0" in out
+    assert out.rstrip().endswith(
+        "  llm_extract_calls 0   seed dictionary, not a model extract"
+    )
+    # No key, no network: the file imports nothing that reaches a provider.
+    source = PART_3.read_text(encoding="utf-8")
+    assert "rag.llm" not in source and "rag.embed " not in source
+
+
+def test_s12_5_deleting_the_sentence_deletes_the_billing_revenue_link():
+    """VO: 'three communities here, two in part two. That paragraph was the only
+    place billing and revenue appeared together.'"""
+    module = _part_3_module()
+    p1 = _part_1_module()
+
+    shipped_chunks = p1.load_chunks()
+    shipped_members = p1.build_members(shipped_chunks)
+    shipped_edges = p1.build_edges(shipped_chunks, shipped_members)
+    assert shipped_edges[("billing", "revenue")] == 1
+    assert len(p1.build_communities(shipped_members, shipped_edges)) == 2
+
+    cut_chunks = []
+    for doc in module.cut_hand_written(load_documents()):
+        cut_chunks.extend(module.fixed_size(doc, size=80, overlap=0))
+    cut_members = p1.build_members(cut_chunks)
+    cut_edges = p1.build_edges(cut_chunks, cut_members)
+    assert ("billing", "revenue") not in cut_edges
+    assert p1.build_communities(cut_members, cut_edges) == [
+        ["TS-999", "billing", "national id"],
+        ["revenue"],
+        ["audit", "tenant"],
+    ]
+
+
 def test_s12_3_the_starter_withholds_the_three_build_functions_and_nothing_else():
     starter = STARTER_1.read_text(encoding="utf-8")
     assert starter.count("raise NotImplementedError") == 3
