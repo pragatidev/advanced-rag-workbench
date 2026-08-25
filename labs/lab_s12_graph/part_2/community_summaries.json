@@ -1,0 +1,28 @@
+{
+  "community_0": {
+    "entities": [
+      "TS-999",
+      "billing",
+      "national id",
+      "revenue"
+    ],
+    "chunks": [
+      "error_catalog:fixed:0",
+      "error_catalog:fixed:1",
+      "faq:fixed:0",
+      "filing_q2_2023:fixed:1",
+      "privacy:fixed:0"
+    ],
+    "summary": "TS-999 is not retryable. Duplicate invoice failures are TS-999."
+  },
+  "community_1": {
+    "entities": [
+      "audit",
+      "tenant"
+    ],
+    "chunks": [
+      "access_control:fixed:0"
+    ],
+    "summary": "Shared runbooks are tagged tenant=shared. Privileged actions write an audit row."
+  }
+}

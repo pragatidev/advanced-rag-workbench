@@ -1,3 +1,5 @@
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -144,15 +146,25 @@ def test_s12_1_the_screened_receipts_are_what_the_files_really_print():
 LAB_S12_GRAPH = ROOT / "labs" / "lab_s12_graph"
 PART_1 = LAB_S12_GRAPH / "part_1" / "build_tiny_graph.py"
 STARTER_1 = LAB_S12_GRAPH / "starter" / "build_tiny_graph.py"
+PART_2 = LAB_S12_GRAPH / "part_2" / "community_summaries.py"
+SUMMARIES_JSON = LAB_S12_GRAPH / "part_2" / "community_summaries.json"
 
 
-def _part_1_module():
+def _load(name: str, path: Path):
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location("s12_3_build_tiny_graph", PART_1)
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _part_1_module():
+    return _load("s12_3_build_tiny_graph", PART_1)
+
+
+def _part_2_module():
+    return _load("s12_4_community_summaries", PART_2)
 
 
 def test_s12_3_the_import_block_is_lines_8_through_16():
@@ -271,6 +283,103 @@ def test_s12_3_the_run_prints_exactly_what_the_lecture_screens():
     # No key, no network: the file imports nothing that reaches a provider.
     source = PART_1.read_text(encoding="utf-8")
     assert "rag.llm" not in source and "rag.embed" not in source
+
+
+def test_s12_4_part_2_picks_up_part_1_and_never_the_hardcoded_summaries():
+    """VO: 'We are not rebuilding the graph with new code, we are picking up the
+    exact graph you watched get built.' And the seeded dictionary summaries in
+    rag.graph.tiny are exactly what this lecture is NOT allowed to use."""
+    source = PART_2.read_text(encoding="utf-8")
+    assert "from build_tiny_graph import" in source
+    assert "rag.graph.tiny" not in source
+    for name in ("load_chunks", "build_members", "build_edges", "build_communities"):
+        assert name in source
+
+
+def test_s12_4_community_chunks_is_the_union_of_its_entities_chunk_lists():
+    """VO: 'the community's evidence is just the union of those chunk id lists.'"""
+    module = _part_2_module()
+    p1 = _part_1_module()
+    members = p1.build_members(p1.load_chunks())
+    assert module.community_chunks(["TS-999", "billing", "national id", "revenue"], members) == [
+        "error_catalog:fixed:0",
+        "error_catalog:fixed:1",
+        "faq:fixed:0",
+        "filing_q2_2023:fixed:1",
+        "privacy:fixed:0",
+    ]
+    assert module.community_chunks(["audit", "tenant"], members) == ["access_control:fixed:0"]
+
+
+def test_s12_4_the_summary_is_derived_from_the_communitys_own_text():
+    """VO: 'Never return a hand written string.' Every sentence of every summary
+    has to be findable in the chunks that community owns."""
+    module = _part_2_module()
+    p1 = _part_1_module()
+    chunks = p1.load_chunks()
+    by_id = {c.chunk_id: c.text for c in chunks}
+    members = p1.build_members(chunks)
+    communities = p1.build_communities(members, p1.build_edges(chunks, members))
+    for names in communities:
+        texts = [by_id[cid] for cid in module.community_chunks(names, members)]
+        blob = " ".join(texts)
+        summary = module._extractive(names, texts)
+        for sentence in summary.split(". "):
+            assert sentence.rstrip(".").strip() in blob
+
+
+def test_s12_4_the_run_prints_exactly_what_the_lecture_screens():
+    """The shipped lane: .env.example ships RAGBENCH_GENERATE=extractive, so the
+    student's screen reads mode extractive and model_calls 0."""
+    env = dict(os.environ)
+    env["RAGBENCH_GENERATE"] = "extractive"
+    out = subprocess.run(
+        [sys.executable, str(PART_2)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        env=env,
+    ).stdout
+    assert "community_0  entities: TS-999, billing, national id, revenue" in out
+    assert (
+        "  chunks: error_catalog:fixed:0, error_catalog:fixed:1, faq:fixed:0, "
+        "filing_q2_2023:fixed:1, privacy:fixed:0" in out
+    )
+    assert "  summary: TS-999 is not retryable. Duplicate invoice failures are TS-999." in out
+    assert "community_1  entities: audit, tenant" in out
+    assert "  chunks: access_control:fixed:0" in out
+    assert (
+        "  summary: Shared runbooks are tagged tenant=shared. "
+        "Privileged actions write an audit row." in out
+    )
+    assert "summaries_written 2   model_calls 0   mode extractive" in out
+    # VO: 'the number of summaries is the number of communities'.
+    assert out.count("entities: ") == 2
+
+
+def test_s12_4_the_json_on_disk_is_the_global_index_part_4_reads():
+    """VO: 'That file is the global index now.' Three keys per community."""
+    env = dict(os.environ)
+    env["RAGBENCH_GENERATE"] = "extractive"
+    SUMMARIES_JSON.unlink(missing_ok=True)
+    subprocess.run(
+        [sys.executable, str(PART_2)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        env=env,
+    )
+    written = json.loads(SUMMARIES_JSON.read_text(encoding="utf-8"))
+    assert list(written) == ["community_0", "community_1"]
+    for entry in written.values():
+        assert set(entry) == {"entities", "chunks", "summary"}
+        assert entry["summary"].strip()
+    assert written["community_0"]["entities"] == [
+        "TS-999", "billing", "national id", "revenue"
+    ]
+    assert written["community_1"]["chunks"] == ["access_control:fixed:0"]
 
 
 def test_s12_3_the_starter_withholds_the_three_build_functions_and_nothing_else():
