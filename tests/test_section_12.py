@@ -545,3 +545,123 @@ def test_s12_3_the_starter_withholds_the_three_build_functions_and_nothing_else(
     )
     assert run.returncode == 1
     assert "TODO 1: build the nodes and their members" in run.stderr
+
+
+# --- S12.6 pins: lab part 4, the refuse rule and the index bill --------------
+
+PART_4 = LAB_S12_GRAPH / "part_4" / "run_graph.py"
+GRAPH_BOARD = ROOT / "runs" / "smoke" / "graph_board.json"
+
+
+def _part_4_module():
+    return _load("s12_6_run_graph", PART_4)
+
+
+def test_s12_6_part_4_reuses_parts_1_and_2_and_never_reimplements_the_graph():
+    """VO: 'We are not rewriting the graph in this file.'"""
+    source = PART_4.read_text(encoding="utf-8")
+    assert "from build_tiny_graph import" in source
+    assert "from community_summaries import community_chunks, summarize" in source
+    assert "from rag.pipelines.hybrid import run_hybrid" in source
+    # Nothing here is a second copy of part 1's graph logic.
+    for owned in ("def build_members", "def build_edges", "def build_communities"):
+        assert owned not in source
+    # Free to run: the card ships extractive and never reaches a provider itself.
+    assert 'os.environ.setdefault("RAGBENCH_GENERATE", "extractive")' in source
+    assert "rag.llm" not in source
+
+
+def test_s12_6_the_refuse_rule_really_is_four_lines():
+    """VO: 'Here is the refuse rule, and it really is four lines.'"""
+    import inspect
+
+    module = _part_4_module()
+    body = inspect.getsource(module.refuse_if_local_holds).splitlines()
+    code = [line for line in body if line.strip() and not line.strip().startswith('"""')]
+    assert len(code) == 4
+    assert module.refuse_if_local_holds(True) == (
+        "REFUSE: local questions still hold. Do not pay for a graph index."
+    )
+    assert module.refuse_if_local_holds(False) is None
+
+
+def test_s12_6_the_failure_log_is_questions_that_failed_one_of_each_kind():
+    """VO: 'Not questions somebody imagined. Questions that failed.'"""
+    module = _part_4_module()
+    assert module.FAILURE_LOG == (
+        ("What does error code TS-999 mean?", "local"),
+        ("What are the main themes in this ACME corpus?", "global"),
+    )
+    assert module.LOCAL_Q == module.FAILURE_LOG[0][0]
+    # The global entry is the one that failed on screen in S12.5.
+    assert module.GLOBAL_Q == "What are the main themes in this ACME corpus?"
+    assert module.ANSWER_TOKEN == "TS-999"
+    assert module.gate() is True
+
+
+def test_s12_6_the_real_index_line_is_arithmetic_over_this_corpus():
+    """VO: 'That number is not a claim I am making. It is arithmetic.'"""
+    module = _part_4_module()
+    chunks, _members, communities, _summaries, calls, mode = module.build_index()
+    assert len(chunks) == 10
+    assert len(communities) == 2
+    assert calls == 0 and mode == "extractive"
+    assert len(chunks) + len(communities) == 12
+
+
+def test_s12_6_the_run_prints_exactly_what_the_lecture_screens():
+    """Every line of all four blocks the VO reads off the terminal, pinned."""
+    out = subprocess.run(
+        [sys.executable, str(PART_4)], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout
+
+    # BLOCK 1: local still holds, so the rule refuses out loud.
+    assert out.startswith("BLOCK 1  the refuse gate\n")
+    assert "  top hit error_catalog:rec:2:ctx  0.3333" in out
+    assert "  TS-999 in retrieved text True" in out
+    assert (
+        "  REFUSE: local questions still hold. Do not pay for a graph index." in out
+    )
+
+    # BLOCK 2: the log, one line per question, with its kind.
+    assert "  local   What does error code TS-999 mean?" in out
+    assert "  global  What are the main themes in this ACME corpus?" in out
+    assert "  a global question is in the log True" in out
+
+    # BLOCK 3: the bill, toy number and real number side by side.
+    assert "  chunks_indexed     10" in out
+    assert "  entities           6" in out
+    assert "  communities        2" in out
+    assert "  llm_extract_calls  0   seed dictionary, not a model extract" in out
+    assert "  llm_summary_calls  0   mode extractive" in out
+    assert (
+        "  a real GraphRAG index here: 10 extract calls + 2 summary calls = "
+        "12 model calls before anyone asks a question" in out
+    )
+
+    # BLOCK 4: global mode reads summaries, it does not search.
+    assert "  chunks searched at question time 0" in out
+    assert "  community_0  entities: TS-999, billing, national id, revenue" in out
+    assert "    TS-999 is not retryable. Duplicate invoice failures are TS-999." in out
+    assert "  community_1  entities: audit, tenant" in out
+    assert (
+        "    Shared runbooks are tagged tenant=shared. "
+        "Privileged actions write an audit row." in out
+    )
+    assert out.rstrip().endswith("graph_board.json")
+
+
+def test_s12_6_the_board_file_is_the_receipt_for_the_section():
+    """VO: 'That is your receipt for this section.'"""
+    subprocess.run(
+        [sys.executable, str(PART_4)], cwd=ROOT, capture_output=True, text=True, check=True
+    )
+    board = json.loads(GRAPH_BOARD.read_text(encoding="utf-8"))
+    assert board == {
+        "llm_extract_calls": 0,
+        "llm_summary_calls": 0,
+        "real_graphrag_index_calls": 12,
+        "refuse_local": (
+            "REFUSE: local questions still hold. Do not pay for a graph index."
+        ),
+    }
