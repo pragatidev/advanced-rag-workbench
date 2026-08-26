@@ -75,6 +75,74 @@ def smash_report(path: Path | None = None) -> dict:
     }
 
 
+def _pdf_string_text(token: str) -> str:
+    """Unescape a PDF literal string token that still has its wrapping parentheses."""
+    inner = token[1 : token.rfind(")")]
+    return inner.replace("\\\\", "\\").replace("\\(", "(").replace("\\)", ")")
+
+
+def _content_stream(raw: str) -> str:
+    start = raw.find("stream")
+    end = raw.find("endstream")
+    if start < 0 or end <= start:
+        return raw
+    return raw[start + len("stream") : end]
+
+
+def dump_print_commands(path: Path | None = None) -> dict:
+    """List every Tj print command in a PDF content stream.
+
+    row_intact is True only when 12420 sits inside the same command that
+    starts with paid_seats. That is the shear check this lecture teaches.
+    """
+    src = path or PDF_PATH
+    raw = src.read_bytes().decode("latin-1", errors="replace")
+    body = _content_stream(raw)
+    import re
+
+    tokens = re.findall(r"\((?:\\.|[^\\)])*\)\s*Tj", body)
+    commands = [_pdf_string_text(tok[: tok.rfind(")") + 1]) for tok in tokens]
+    label = next((c for c in commands if c.startswith("paid_seats")), "")
+    lines = [ln.strip() for ln in body.splitlines() if ln.strip()]
+    shear: list[str] = []
+    capturing = False
+    for ln in lines:
+        if "(paid_seats 11800)" in ln and "Tj" in ln:
+            capturing = True
+        if capturing:
+            shear.append(ln)
+        if capturing and "(12420)" in ln and "Tj" in ln:
+            break
+    try:
+        rel = src.resolve().relative_to(DATA.parent.parent)
+        pdf_label = rel.as_posix()
+    except ValueError:
+        pdf_label = src.as_posix()
+    return {
+        "pdf": pdf_label,
+        "print_commands": commands,
+        "label_command": label,
+        "has_12420": any("12420" in c for c in commands),
+        "row_intact": "12420" in label,
+        "shear_window": shear,
+    }
+
+
+def emit_print_commands(path: Path | None = None) -> None:
+    """Print the dump a student can re-run. One line per field. No invented rows."""
+    dump = dump_print_commands(path)
+    print("pdf", dump["pdf"])
+    print("print_commands")
+    for text in dump["print_commands"]:
+        print("Tj", text)
+    print("label_command", dump["label_command"])
+    print("has_12420", dump["has_12420"])
+    print("row_intact", dump["row_intact"])
+    print("shear_window:")
+    for ln in dump["shear_window"]:
+        print(ln)
+
+
 def _fallback_rows() -> list[dict]:
     docs = {d.doc_id: d for d in load_documents()}
     rows = table_row_chunks(docs["q2_kpis"])
