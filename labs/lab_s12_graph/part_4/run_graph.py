@@ -150,7 +150,8 @@ def main() -> None:
     dest = ROOT / "runs" / "smoke" / "graph_board.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(board, indent=2, ensure_ascii=False), encoding="utf-8")
-    print("wrote", dest.as_posix())
+    # Print the path relative to the repo root: every machine prints the same line.
+    print("wrote", dest.relative_to(ROOT).as_posix())
 
 
 if __name__ == "__main__":
