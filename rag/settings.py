@@ -11,11 +11,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 STORE_ROOT = ROOT / "store"
 
-# Official Model Studio International (Singapore). Not the unofficial token-plan host.
-DEFAULT_LLM_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-DEFAULT_LLM_MODEL = "qwen3.8-max"
-DEFAULT_EMBED_MODEL = "nomic-embed-text"
-DEFAULT_EMBED_MODEL_B = "text-embedding-3-large"
+# Defaults are VENDOR-NEUTRAL and keyless (2026-09-01). They used to hardcode a Qwen endpoint
+# and a Qwen model id, so a learner with an empty .env silently inherited one vendor and the
+# .env.example could not change it. Local Ollama is the honest default: free, no key, and
+# nothing leaves the machine. Set the LLM_* triple in .env to point anywhere else.
+DEFAULT_LLM_BASE_URL = "http://localhost:11434/v1"
+DEFAULT_LLM_MODEL = "llama3.2:3b"
+# A REAL local embedder, free and keyless, already installed with the requirements.
+# This used to default to "nomic-embed-text", which get_embedder silently resolved to the
+# 64-dimension teaching toy while printing the hosted name on screen.
+DEFAULT_EMBED_MODEL = "all-MiniLM-L6-v2"
+DEFAULT_EMBED_MODEL_B = "hash"
 DEFAULT_RERANK_MODEL = "BAAI/bge-reranker-base"
 WORKSPACE_BASE_URL = "https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 US_BASE_URL = "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
@@ -180,7 +186,7 @@ class _Settings:
 
     @property
     def api_backend(self) -> str:
-        explicit = _first_env("RAGBENCH_API_BACKEND", default="").lower()
+        explicit = _first_env("RAGBENCH_API_BACKEND", "LLM_BACKEND", default="").lower()
         if explicit in {"anthropic", "openai"}:
             return explicit
         if self.llm_provider == "anthropic":
