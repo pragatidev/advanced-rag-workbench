@@ -1,0 +1,25 @@
+==============================================================================
+QUESTION: What does error code TS-999 mean? Answer in one or two sentences.
+==============================================================================
+
+[1] COLD, hosted frontier model, no documents
+    model: claude-haiku-4-5
+    I don't have specific information about error code TS-999 in my training data. To help you, could you provide more context about what system or software this error is from (e.g., a specific application, service, or platform)?
+
+[2] COLD, local model on this machine, no documents
+    model: llama3.2:3b
+    I couldn't find any information on an error code "TS-999". It's possible that it's a specific error code used by a particular software or hardware manufacturer, but without more context, I couldn't provide a more detailed explanation.
+
+[3] RETRIEVED from data/acme, the same question
+    embedder: all-MiniLM-L6-v2
+    1. error_catalog:fixed:0  score 0.550
+       # Platform error catalog ## General guidance When a fault appears in logs, restart the worker and check the last fifty lines. Most error codes in gene
+    2. error_catalog:fixed:1  score 0.323
+       account. The runbook owner is billing-ops. The exact token TS-999 is the lookup key.
+    3. faq:fixed:0  score 0.287
+       # ACME support FAQ Q: How do I reset my password? A: Use the identity portal. Support will not read your password over chat. Q: Who owns billing incid
+
+==============================================================================
+Both cold answers failed the same way. TS-999 is not in any model's weights.
+It is one line in data/acme/runbooks/error_catalog.md, and retrieval found it.
+==============================================================================
