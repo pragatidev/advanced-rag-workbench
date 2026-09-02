@@ -117,7 +117,19 @@ class _Settings:
 
     @property
     def llm_provider(self) -> str:
-        return _first_env("RAGBENCH_PROVIDER", "LLM_PROVIDER", default="qwen").lower()
+        # Explicit wins; otherwise derive from the base URL so the printed label is never a lie
+        # (2026-09-02: the old default "qwen" printed "provider qwen" on an Anthropic or local run).
+        explicit = _first_env("RAGBENCH_PROVIDER", "LLM_PROVIDER", default="").lower()
+        if explicit:
+            return explicit
+        base = self.llm_base_url.lower()
+        if "anthropic" in base:
+            return "anthropic"
+        if "openai.com" in base:
+            return "openai"
+        if "localhost" in base or "127.0.0.1" in base:
+            return "local"
+        return "openai-compatible"
 
     @property
     def llm_base_url(self) -> str:
