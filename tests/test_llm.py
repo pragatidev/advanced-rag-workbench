@@ -6,7 +6,8 @@ from rag.chunkers import Chunk
 from rag.llm import chat
 
 
-def test_default_endpoint_is_model_studio_intl(monkeypatch):
+def test_default_endpoint_is_local_and_keyless(monkeypatch):
+    # No vendor default: with nothing set, the workbench points at a local Ollama server.
     for name in (
         "RAGBENCH_API_BASE",
         "RAGBENCH_BASE_URL",
@@ -17,8 +18,8 @@ def test_default_endpoint_is_model_studio_intl(monkeypatch):
         "ANTHROPIC_MODEL",
     ):
         monkeypatch.delenv(name, raising=False)
-    assert api_base() == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-    assert api_model() == "qwen3.8-max"
+    assert api_base() == "http://localhost:11434/v1"
+    assert api_model() == "llama3.2:3b"
 
 
 def test_generate_mode_without_key_is_extractive(monkeypatch):
