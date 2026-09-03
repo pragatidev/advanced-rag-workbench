@@ -120,7 +120,7 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
                 return {
                     "ok": False,
                     "skipped": True,
-                    "note": "SKIPPED: no server on 11434/1234 and no DASHSCOPE_API_KEY",
+                    "note": "SKIPPED: no server on 11434/1234 and no LLM_API_KEY",
                     "model": model,
                     "endpoint": base,
                 }
@@ -134,16 +134,35 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
             "model": model,
             "endpoint": base,
         }
-    url = base.rstrip("/") + "/chat/completions"
-    body = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0,
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {key}",
-    }
+    # The ping speaks the same wire format chat() does: Anthropic Messages on the anthropic door,
+    # OpenAI chat completions everywhere else (2026-09-03: it posted /chat/completions to
+    # api.anthropic.com and reported a 404 as "generate call failed" on a working key).
+    anthropic = Settings.api_backend == "anthropic"
+    if anthropic:
+        url = base.rstrip("/") + "/v1/messages"
+        body = {
+            "model": model,
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": key,
+            "Authorization": f"Bearer {key}",
+            "anthropic-version": "2023-06-01",
+        }
+    else:
+        url = base.rstrip("/") + "/chat/completions"
+        body = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+        }
     try:
         payload = _post(url, headers, body, timeout)
     except Exception as exc:
@@ -154,12 +173,18 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
             "model": model,
             "endpoint": base,
         }
-    text = (
-        payload.get("choices", [{}])[0]
-        .get("message", {})
-        .get("content", "")
-        .strip()
-    )
+    if anthropic:
+        parts = payload.get("content") or []
+        text = "".join(
+            p.get("text", "") for p in parts if isinstance(p, dict) and p.get("type") == "text"
+        ).strip()
+    else:
+        text = (
+            payload.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
     return {
         "ok": True,
         "skipped": False,
