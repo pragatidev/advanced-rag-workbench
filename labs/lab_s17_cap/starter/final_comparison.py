@@ -12,7 +12,13 @@ if str(ROOT) not in sys.path:
 
 from rag.eval.runner import run_eval
 
-summary = run_eval(a="naive", b="hybrid", out_dir=ROOT / "runs" / "naive_vs_hybrid")
+# TODO: call run_eval on naive versus the stack you kept, write runs/naive_vs_hybrid
+OUT = ROOT / "runs" / "naive_vs_hybrid"
+summary = run_eval(a="naive", b="hybrid", out_dir=OUT)
+print("=== same runner, stack you kept ===")
+print("a", summary["a"])
+print("b", summary["b"])
 print("n", summary["n"])
 print("naive", summary["mean"]["naive"])
 print("hybrid", summary["mean"]["hybrid"])
+print("metrics", OUT / "metrics.json")
