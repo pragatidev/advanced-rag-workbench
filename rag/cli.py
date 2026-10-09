@@ -23,8 +23,8 @@ def main(argv: list[str] | None = None) -> int:
         choices=["extractive", "api"],
         help=(
             "extractive = copy the answer from the retrieved text, no key. "
-            "api = the model set in .env writes it; needs LLM_API_KEY (the local door uses ollama), "
-            "and with no key it prints SKIPPED and stays extractive. "
+            "api = the model set in .env writes it. The local door needs no key; a hosted door "
+            "needs LLM_API_KEY, and with none it prints SKIPPED and stays extractive. "
             "Default: RAGBENCH_GENERATE in .env."
         ),
     )

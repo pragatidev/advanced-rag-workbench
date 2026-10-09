@@ -92,4 +92,4 @@ With pip: `pip install "sentence-transformers==3.4.1"` (local cross-encoder) or 
 
 ## Optional: a model that writes the answers
 
-Retrieval never needs one. To add generate, open `.env`, fill in one door and set `RAGBENCH_GENERATE=api`. The doors are local Ollama (no account: `ollama pull qwen3:8b`, then uncomment the LOCAL block, which sets `LLM_API_KEY=ollama`), Anthropic, or any OpenAI-compatible provider. The blocks are ready in `.env.example`, and README.md explains the three doors. Never commit `.env`.
+Retrieval never needs one. To add generate, open `.env`, fill in one door and set `RAGBENCH_GENERATE=api`. The doors are local Ollama (no account and no key: `ollama pull qwen3:8b`, then uncomment the LOCAL block), Anthropic, or any OpenAI-compatible provider. The blocks are ready in `.env.example`, and README.md explains the three doors. Never commit `.env`.

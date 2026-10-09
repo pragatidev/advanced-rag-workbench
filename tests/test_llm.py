@@ -22,7 +22,7 @@ def _local_door(monkeypatch, key: str = "") -> None:
     monkeypatch.setattr(rag.generate, "load_dotenv", lambda path=None: None)
     for name in _KEY_ENV_NAMES:
         monkeypatch.setenv(name, "")
-    for name in _DOOR_ENV_NAMES:
+    for name in _DOOR_ENV_NAMES + ("RAGBENCH_MODEL", "LLM_MODEL", "ANTHROPIC_MODEL"):
         monkeypatch.delenv(name, raising=False)
     if key:
         monkeypatch.setenv("LLM_API_KEY", key)
@@ -81,22 +81,51 @@ def test_extractive_still_default():
 
 
 def test_api_without_key_raises(monkeypatch):
-    for name in (
-        "RAGBENCH_API_KEY",
-        "LLM_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "ANTHROPIC_AUTH_TOKEN",
-        "BAILIAN_TOKEN_PLAN_API_KEY",
-        "DASHSCOPE_API_KEY",
-        "OPENAI_API_KEY",
-        "GEMINI_API_KEY",
-        "XAI_API_KEY",
-        "DEEPSEEK_API_KEY",
-    ):
-        monkeypatch.setenv(name, "")
+    # A hosted door with no key stops before any call. (The local door needs no key: next test.)
+    _local_door(monkeypatch)
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.openai.com/v1")
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("chat made a network call")
+
+    monkeypatch.setattr(rag.llm, "_post", no_network)
     chunk = Chunk(chunk_id="c", doc_id="d", title="t", text="hello")
     with pytest.raises(RuntimeError, match="key"):
         chat("q", [chunk])
+
+
+def _fake_post(calls):
+    def fake(url, headers, body, timeout):
+        calls.append({"url": url, "headers": headers, "body": body})
+        return {"model": body["model"], "choices": [{"message": {"content": "TS-999 is a duplicate invoice [1]."}}]}
+
+    return fake
+
+
+def test_local_door_needs_no_key(monkeypatch):
+    # No LLM_API_KEY at all: chat() sends the local placeholder, the same as ping().
+    _local_door(monkeypatch)
+    calls = []
+    monkeypatch.setattr(rag.llm, "_post", _fake_post(calls))
+    chunk = Chunk(chunk_id="c", doc_id="d", title="t", text="TS-999 means duplicate invoice.")
+    result = chat("What is TS-999?", [chunk])
+    assert result["text"] == "TS-999 is a duplicate invoice [1]."
+    assert len(calls) == 1
+    assert calls[0]["url"] == "http://localhost:11434/v1/chat/completions"
+    assert calls[0]["headers"]["Authorization"] == "Bearer ollama"
+
+
+def test_generate_api_on_the_local_door_without_a_key(monkeypatch):
+    # python -m rag ask "..." --generate api with Ollama up and no key: the model writes it.
+    _local_door(monkeypatch)
+    calls = []
+    monkeypatch.setattr(rag.llm, "_post", _fake_post(calls))
+    chunk = Chunk(chunk_id="c", doc_id="d", title="t", text="TS-999 means duplicate invoice.")
+    answer, meta = generate_answer("What is TS-999?", [chunk], mode="api")
+    assert answer == "TS-999 is a duplicate invoice [1]."
+    assert meta["generator"] == "api"
+    assert meta["model"] == "qwen3:8b"
+    assert len(calls) == 1
 
 
 def test_unreachable_model_is_the_same_runtime_error(monkeypatch):

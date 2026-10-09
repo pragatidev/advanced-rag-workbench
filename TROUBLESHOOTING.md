@@ -385,22 +385,8 @@ and puts this in the `"generator"` part of the answer:
 The part in brackets is the refusal as Windows words it. What it means: nothing answers at `http://localhost:11434`, so Ollama is not installed or not running.
 
 Fix **(not tested here)**: install Ollama from https://ollama.com, start it, and pull the model: `ollama pull qwen3:8b`.
-Fix **(tested with the stand-in)**: with a server answering at 11434, the ping lab printed `ping pong` and the ask
-printed `"generator": "api"`.
-
-### `SKIPPED: RAGBENCH_GENERATE=api needs a key in .env`, and you use Ollama
-
-```
-    "note": "SKIPPED: RAGBENCH_GENERATE=api needs a key in .env (RAGBENCH_API_KEY or ANTHROPIC_API_KEY). Do not commit the key."
-```
-
-This is inside the `"generator"` part of the answer from `python -m rag ask "..." --generate api`, and the answer is
-copied from the retrieved text. On the test machine a model was answering at 11434 and was never called.
-
-What it means: generate needs a key set, even for the local model, and your `.env` has none.
-
-Fix **(tested)**: uncomment the LOCAL block in `.env`, which sets `LLM_API_KEY=ollama`, and set `RAGBENCH_GENERATE=api`
-at the bottom. The ask then printed `"generator": "api"` and `"model": "qwen3:8b"`.
+Fix **(tested with the stand-in)**: with a server answering at 11434 and no key in `.env`, the ping lab printed
+`ping pong` and the ask printed `"generator": "api"`. The local door needs no key.
 
 ### The model is not pulled
 
@@ -416,7 +402,7 @@ What it means: Ollama is running but does not have the model in `LLM_MODEL`. You
 
 Fix **(not tested here)**: `ollama pull qwen3:8b`, or the model the error names. `ollama list` shows what you have.
 
-### A key is set, but the answers are still copied from the text
+### A model is set up, but the answers are still copied from the text
 
 There is no error. `python -m rag ask "..."` answers with:
 
@@ -426,7 +412,8 @@ There is no error. `python -m rag ask "..."` answers with:
   },
 ```
 
-What it means: `.env.example` ships `RAGBENCH_GENERATE=extractive`, and that line wins over the key.
+What it means: `.env.example` ships `RAGBENCH_GENERATE=extractive`, and that line wins over a key or the LOCAL block.
+On the test machine, with the LOCAL block uncommented, a model was answering at 11434 and was never called.
 
 Fix **(tested)**: set `RAGBENCH_GENERATE=api` in `.env` (or pass `--generate api` for one question). The ask then
 printed `"generator": "api"`.

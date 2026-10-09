@@ -42,7 +42,12 @@ def _post(url: str, headers: dict, body: dict, timeout: int) -> dict:
         raise RuntimeError(f"model not reachable at {url} ({exc.reason})") from exc
 
 
-def _chat_openai(question: str, chunks: list[Chunk], timeout: int) -> dict:
+def _local_key(base: str) -> str:
+    """Ollama and LM Studio ignore the key, but the header still wants a value."""
+    return "ollama" if "11434" in base else "lm-studio"
+
+
+def _chat_openai(question: str, chunks: list[Chunk], timeout: int, key: str) -> dict:
     url = api_base() + "/chat/completions"
     body = {
         "model": api_model(),
@@ -54,7 +59,7 @@ def _chat_openai(question: str, chunks: list[Chunk], timeout: int) -> dict:
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key()}",
+        "Authorization": f"Bearer {key}",
     }
     payload = _post(url, headers, body, timeout)
     text = (
@@ -66,7 +71,7 @@ def _chat_openai(question: str, chunks: list[Chunk], timeout: int) -> dict:
     return payload, text
 
 
-def _chat_anthropic(question: str, chunks: list[Chunk], timeout: int) -> dict:
+def _chat_anthropic(question: str, chunks: list[Chunk], timeout: int, key: str) -> dict:
     url = api_base().rstrip("/") + "/v1/messages"
     body = {
         "model": api_model(),
@@ -79,8 +84,8 @@ def _chat_anthropic(question: str, chunks: list[Chunk], timeout: int) -> dict:
         "Content-Type": "application/json",
         # Both auth styles: real Anthropic reads x-api-key; OpenAI-compatible and
         # Claude-Code-style gateways (e.g. Model Studio app routes) require Bearer.
-        "x-api-key": api_key(),
-        "Authorization": "Bearer " + api_key(),
+        "x-api-key": key,
+        "Authorization": "Bearer " + key,
         "anthropic-version": "2023-06-01",
     }
     payload = _post(url, headers, body, timeout)
@@ -128,7 +133,7 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
                     "endpoint": base,
                 }
         if not key:
-            key = "ollama" if "11434" in base else "lm-studio"
+            key = _local_key(base)
     elif not Settings.has_api_key:
         return {
             "ok": False,
@@ -200,16 +205,21 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
 
 
 def chat(question: str, chunks: list[Chunk], timeout: int = 90) -> dict:
+    from rag.settings import Settings
+
     key = api_key()
+    if not key and Settings.is_local:
+        # The local door needs no key, the same as ping(): send the placeholder.
+        key = _local_key(api_base())
     if not key:
         raise RuntimeError(
             "RAGBENCH_GENERATE=api needs a key in .env "
             "(RAGBENCH_API_KEY or ANTHROPIC_API_KEY). Do not commit the key."
         )
     if api_backend() == "anthropic":
-        payload, text = _chat_anthropic(question, chunks, timeout)
+        payload, text = _chat_anthropic(question, chunks, timeout, key)
     else:
-        payload, text = _chat_openai(question, chunks, timeout)
+        payload, text = _chat_openai(question, chunks, timeout, key)
     usage = payload.get("usage") or {}
     return {
         "text": text or "REFUSE: empty model response.",
