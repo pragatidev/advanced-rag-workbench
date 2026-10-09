@@ -21,5 +21,6 @@ VS Code `# %%` twins of each lab part. Open the file, Run Cell.
 | S15 Cost / cache / traces | `section_15_cost_cache_and_traces/` |
 | S16 Governance | `section_16_enterprise_data_governance/` |
 | S17 Capstone | `section_17_ship_one_pipeline_from_evidence/` |
+| S18 Frontier cards | `section_18_optional_2026_frontier_cards/` |
 
 The runnable source of truth is `labs/`. Concept cards are `docs/mechanisms/`.
