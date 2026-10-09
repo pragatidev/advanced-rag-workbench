@@ -71,7 +71,7 @@ Concept cards: `docs/mechanisms/`. Product door: `python app.py` or `from rag im
 | `notebooks/` | 20 section folders (sections 3, 4 and 15 have none): VS Code `# %%` twins of 61 lab parts, plus concept walks. Twins are built from the lab parts by `scripts/make_twins.py`. |
 | `rag/` | The package: chunkers, embedders, stores, retrieval, rerank, query, routing, loops, graph, multimodal, eval, governance, cost and cache, settings. |
 | `runs/` | Where evaluations write `metrics.json` and ask logs. Contents are ignored by git. |
-| `scripts/` | `smoke_all.py` (the section tests as a PASS/FAIL table) and `make_twins.py` (rebuilds the notebook twins). |
+| `scripts/` | `smoke_all.py` (every test file, one at a time, as a PASS/FAIL table) and `make_twins.py` (rebuilds the notebook twins). |
 | `store/` | Local indexes for Chroma, FAISS and Qdrant, built when you run the labs. Contents are ignored by git. |
 | `tests/` | The pytest suite: one file per section plus the package tests. No key needed. |
 | `.claude/`, `.grok/` | The same `ask-acme` agent skill, for Claude Code and for Grok. |
@@ -139,7 +139,7 @@ python app.py
 python -m rag ask "What does error code TS-999 mean?" --pipeline hybrid
 ```
 
-Makefile: `make test`, `make dest`, `make section-N`, `make smoke`.
+Makefile: `make test`, `make dest`, `make smoke`, and `make section-N`, which runs `tests/test_section_N.py` (`make section-8b` runs `tests/test_section_08b.py`). Like the folder names, those numbers are older than the course map. Windows has no `make` unless you install one; `python -m pytest tests/test_section_08b.py` is the same run.
 
 Optional extras: `uv sync --extra local-rerank` (cross-encoder), `--extra docling`, `--extra pgvector`.
 
