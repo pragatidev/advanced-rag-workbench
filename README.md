@@ -5,7 +5,7 @@ Companion repo for **Advanced RAG Techniques: Architecture [2026]** (curriculum 
 One corpus (`data/acme/`). One question file (`eval/questions.jsonl`). One package (`rag/`). Keep the winner. Refuse the rest.
 
 [![pytest](https://img.shields.io/badge/pytest-no%20API%20key-2ea44f)](tests/test_smoke.py)
-[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab)](.python-version)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab)](.python-version)
 [![license](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 ## Quickstart

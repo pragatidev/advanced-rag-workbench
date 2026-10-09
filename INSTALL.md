@@ -1,6 +1,6 @@
 # Install
 
-Python 3.11 or 3.12. VS Code. Git. **No API key.**
+Python 3.11, 3.12 or 3.13 (3.13 recommended). VS Code. Git. **No API key.**
 
 Preferred:
 

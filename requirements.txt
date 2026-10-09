@@ -1,5 +1,5 @@
 # Pinned. Recreate with: pip install -r requirements.txt
-# Python 3.11 or 3.12. See .python-version.
+# Python 3.11, 3.12 or 3.13. See .python-version.
 numpy==2.4.6
 rank-bm25==0.2.2
 pytest==9.1.1

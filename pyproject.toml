@@ -3,7 +3,7 @@ name = "advanced-rag-workbench"
 version = "1.0.0"
 description = "Student workbench for Advanced RAG Techniques: Architecture [2026]"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.14"
 license = { text = "MIT" }
 authors = [{ name = "Pragati Kunwer" }]
 dependencies = [
