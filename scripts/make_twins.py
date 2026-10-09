@@ -38,9 +38,12 @@ TWIN_FOLDERS = {
     "lab_s13_mm": "section_13_multimodal_tables_and_images",
     "lab_s14_eval": "section_14_evaluation_metrics",
     "lab_s15_prod": "section_15_cost_cache_and_traces",
+    "lab_s15b_fresh": "section_15b_incremental_index_and_cutover",
     "lab_s16_gov": "section_16_enterprise_data_governance",
     "lab_s17_cap": "section_17_ship_one_pipeline_from_evidence",
+    "lab_s17_walk": "section_17_ship_one_pipeline_from_evidence",
 }
+# lab_s11b_hop (course section 15) has no notebook folder, so its parts have no twins.
 
 # A lab part sits three folders below the root; a twin sits two. The twin prefers the
 # working directory when it is the repo root, because Run Cell may not set __file__.
@@ -57,6 +60,13 @@ def part_files() -> list[Path]:
             if len(files) != 1:
                 raise SystemExit(f"{part_dir.relative_to(ROOT).as_posix()}: expected one .py, found {len(files)}")
             out.append(files[0])
+    # Two labs can share a notebook folder (section 17), so two parts must never share a twin file.
+    seen = {}
+    for part in out:
+        twin = twin_path(part)
+        if twin in seen:
+            raise SystemExit(f"{seen[twin]} and {part.relative_to(ROOT).as_posix()} both map to {twin.name}")
+        seen[twin] = part.relative_to(ROOT).as_posix()
     return out
 
 

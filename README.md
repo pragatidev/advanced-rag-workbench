@@ -68,7 +68,7 @@ Concept cards: `docs/mechanisms/`. Product door: `python app.py` or `from rag im
 | `exercises/` | The coding exercises, with TODOs to fill. |
 | `solutions/` | Reference answers for `exercises/`. |
 | `labs/` | 20 labs, 67 parts. Each part is one script you run from the repo root; most labs also have `starter/` and `solution/`. |
-| `notebooks/` | 20 section folders (sections 3, 4 and 15 have none): VS Code `# %%` twins of 61 lab parts, plus concept walks. Twins are built from the lab parts by `scripts/make_twins.py`. |
+| `notebooks/` | 20 section folders (sections 3, 4 and 15 have none): VS Code `# %%` twins of 65 lab parts (every lab except section 15's), plus concept walks. Twins are built from the lab parts by `scripts/make_twins.py`. |
 | `rag/` | The package: chunkers, embedders, stores, retrieval, rerank, query, routing, loops, graph, multimodal, eval, governance, cost and cache, settings. |
 | `runs/` | Where evaluations write `metrics.json` and ask logs. Contents are ignored by git. |
 | `scripts/` | `smoke_all.py` (every test file, one at a time, as a PASS/FAIL table) and `make_twins.py` (rebuilds the notebook twins). |
