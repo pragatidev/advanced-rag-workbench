@@ -40,6 +40,23 @@ def rerank_cross_encoder(query: str, hits: list[Hit], keep: int = 5) -> tuple[li
     return ranked[:keep], Settings.rerank_model
 
 
+def skip_when_confident(
+    hits: list[Hit],
+    min_top: float = 0.25,
+    min_gap: float = 0.20,
+) -> bool:
+    """Skip the pair scorer when first-stage top is already peaked.
+
+    Scores are on a 0-1 scale (dense cosine). A high top with a tiny gap
+    is not confidence. Both the floor and the gap must fire.
+    """
+    if len(hits) < 2:
+        return False
+    top = hits[0].score
+    gap = top - hits[1].score
+    return top >= min_top and gap >= min_gap
+
+
 def pack_ends(hits: list[Hit]) -> list[Hit]:
     """Put the best chunk first and the second-best last. Liu et al. 2023."""
     ordered = sorted(hits, key=lambda h: h.score, reverse=True)

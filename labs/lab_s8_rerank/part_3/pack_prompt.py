@@ -20,6 +20,8 @@ hits = [
 ]
 packed = pack_ends(hits)
 print("order", [h.chunk.chunk_id for h in packed])
+print("first", packed[0].chunk.chunk_id)
+print("last", packed[-1].chunk.chunk_id)
 print("first is best", packed[0].chunk.chunk_id == "c2")
 print("last is second", packed[-1].chunk.chunk_id == "c3")
 print(pack_prompt("What does TS-999 mean?", hits)[:400])

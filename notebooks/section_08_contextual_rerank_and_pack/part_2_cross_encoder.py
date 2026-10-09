@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path.cwd() if (Path.cwd() / "rag").is_dir() else Path(__file__).resolve().parents[2]
@@ -25,13 +26,16 @@ chunks = chunk_corpus(docs, "recursive")
 q = "What does error code TS-999 mean?"
 wide = rrf_fuse(
     [
-        dense_search(q, chunks, embedder=HashEmbedder(semantic_mode=True), k=12),
-        bm25_search(q, chunks, k=12),
+        dense_search(q, chunks, embedder=HashEmbedder(semantic_mode=True), k=20),
+        bm25_search(q, chunks, k=20),
     ],
-    top_n=12,
+    top_n=20,
 )
-ranked, backend = rerank_cross_encoder(q, wide, keep=4)
+t0 = time.perf_counter()
+ranked, backend = rerank_cross_encoder(q, wide, keep=5)
+ms = (time.perf_counter() - t0) * 1000.0
 print("backend", backend)
-print("wide", len(wide), "kept", len(ranked))
+print("chunks", len(chunks), "wide", len(wide), "kept", len(ranked))
+print(f"rerank_ms {ms:.1f}")
 for h in ranked:
     print(f"  {h.score:.3f} {h.chunk.chunk_id} ts999={'TS-999' in h.chunk.text}")
