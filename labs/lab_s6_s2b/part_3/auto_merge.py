@@ -19,10 +19,17 @@ leaves = []
 for d in docs:
     leaves.extend(parent_child(d, child_size=40))
 emb = HashEmbedder(semantic_mode=False)
-hits = dense_search("What was ACME revenue growth in Q2 2023?", leaves, embedder=emb, k=8)
+query = "What was ACME revenue growth in Q2 2023?"
+hits = dense_search(query, leaves, embedder=emb, k=8)
+print("query", query)
+print("threshold", 0.5)
 print("leaves", len(hits))
-for h in hits[:5]:
-    print(" ", h.chunk.chunk_id, h.chunk.metadata.get("parent_id"))
+for h in hits:
+    meta = h.chunk.metadata or {}
+    print(" ", h.chunk.chunk_id, meta.get("parent_id"), "leaf", meta.get("leaf_index"))
 merged = merge_hits(hits, threshold=0.5)
 print("merged", len(merged))
 print("parent_replacement", any(h.source == "auto_merge" for h in merged))
+for h in merged:
+    meta = h.chunk.metadata or {}
+    print(" ", h.source, h.chunk.chunk_id, "merged_leaves", meta.get("merged_leaves"))

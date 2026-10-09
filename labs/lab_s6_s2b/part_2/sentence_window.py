@@ -17,13 +17,33 @@ docs = load_documents()
 chunks = []
 for d in docs:
     chunks.extend(build(d))
+print("sentences", len(chunks))
 emb = HashEmbedder(semantic_mode=False)
-hits = dense_search("What was ACME revenue growth in Q2 2023?", chunks, embedder=emb, k=3)
+query = "What was ACME revenue growth in Q2 2023?"
+hits = dense_search(query, chunks, embedder=emb, k=3)
+print("query", query)
+for i, h in enumerate(hits):
+    print("hit", i, h.chunk.chunk_id)
 center = next((h.chunk for h in hits if "3%" in h.chunk.text), hits[0].chunk)
+print("center_id", center.chunk_id)
 print("sentence", center.text)
+print(
+    "sent_index",
+    center.metadata["sent_index"],
+    "sent_count",
+    center.metadata["sent_count"],
+)
+print("prev_id", center.metadata["prev_id"])
+print("next_id", center.metadata["next_id"])
+print("chunker", center.metadata["chunker"])
+print("parent_id", center.metadata.get("parent_id", ""))
 win = window_text(chunks, center, radius=3)
-print("window_sentences ~", len(win.split(". ")))
+print("radius", 3)
+print("window_chars", len(win))
 print("ACME in window:", "acme" in win.lower())
-print(win[:400])
+print("3pct in window:", "3%" in win)
+print("window:")
+print(win)
 expanded = expand_window(hits[:1], chunks, radius=3)
 print("expanded_id", expanded[0].chunk.chunk_id)
+print("expanded_chars", len(expanded[0].chunk.text))
