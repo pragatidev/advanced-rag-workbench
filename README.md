@@ -108,8 +108,8 @@ Retrieval never needs a model. Generate does, and the workbench reaches every mo
 | Door | `LLM_BACKEND` | `LLM_BASE_URL` | `LLM_API_KEY` | `LLM_MODEL` |
 |---|---|---|---|---|
 | Local, Ollama (the default) | `openai` | `http://localhost:11434/v1` | none needed | `qwen3:8b` |
-| Anthropic | `anthropic` | `https://api.anthropic.com` | your key | `claude-haiku-4-5` |
-| OpenAI-compatible | `openai` | `https://api.openai.com/v1` | your key | `gpt-5.6-luna` |
+| Anthropic | `anthropic` | `https://api.anthropic.com` | your key | `claude-haiku-5-5` |
+| OpenAI-compatible | `openai` | `https://api.openai.com/v1` | your key | `gpt-6-luna` |
 
 With no `.env`, the workbench uses the local door: `qwen3:8b` on Ollama (`ollama pull qwen3:8b`). Laptop-sized alternatives: `llama3.2:3b`, `llama3.2:1b`, `gemma3:4b`, `qwen2.5:3b`, `phi4-mini`. LM Studio is the same door on `http://localhost:1234/v1`. Your prompts never leave your machine.
 
