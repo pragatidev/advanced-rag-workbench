@@ -12,7 +12,7 @@ Run them from the repo root, same interpreter as Section 2.
 .venv\Scripts\python basics/two_chunks_flags.py
 ```
 
-1. `cold_ask.py`: TS-999 asked with no documents, of a hosted model (skipped with no key) and a local one, then the three pieces retrieval finds for the same question.
+1. `cold_ask.py`: TS-999 asked with no documents, of the hosted door in `.env` (Anthropic or OpenAI-compatible; skipped with no key) and of a local model (the local door in `.env`, such as LM Studio, or else Ollama on `localhost:11434`), then the three pieces retrieval finds for the same question.
 2. `grounded_ask.py`: the same question through both steps of RAG. Step one finds the same three pieces. Step two sends them to the model in `.env` with the workbench's own instructions (answer only from the pieces, cite them) and prints the message as sent and the answer. Local Ollama needs no key; with no model server running, it prints `SKIPPED` after step one.
 3. `two_chunks_flags.py`: the fixed cut on the Q2 filing, both pieces, and which piece holds the name and which the number.
 

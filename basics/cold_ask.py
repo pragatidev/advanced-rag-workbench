@@ -13,14 +13,15 @@ what retrieval fixes, and it is why a bigger model is not the answer.
 Run:
     python basics/cold_ask.py
 
-Needs no key for the local leg. The hosted leg is skipped with a printed note if LLM_API_KEY
-is unset, so this script always runs.
+Leg 1 asks the hosted door set in .env (Anthropic or any OpenAI-compatible provider) through
+the workbench's own client, and is skipped with a printed note if LLM_API_KEY is unset. Leg 2
+asks the local door in .env (Ollama, LM Studio, any port), or Ollama on localhost:11434 when
+.env names none, and needs no key. Whatever is missing is skipped, so this script always runs.
 """
 from __future__ import annotations
 
 import json
 import sys
-import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -32,12 +33,11 @@ from rag.chunkers import chunk_corpus
 from rag.corpus import load_documents
 from rag.embedders import get_embedder
 from rag.envload import load_dotenv
+from rag.llm import _local_key, ask_plain
 from rag.retrieve import dense_search
-from rag.settings import Settings
+from rag.settings import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL, Settings
 
 QUESTION = "What does error code TS-999 mean? Answer in one or two sentences."
-LOCAL_BASE = "http://localhost:11434/v1"
-LOCAL_MODEL = "qwen3:8b"
 RULE = "=" * 78
 
 
@@ -49,37 +49,29 @@ def _post(url: str, headers: dict, body: dict, timeout: int = 90) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def cold_anthropic(question: str) -> tuple[str, str]:
+def cold_hosted(question: str) -> tuple[str, str]:
     """A plain ask. No system prompt, no sources: exactly how a person would ask it."""
-    payload = _post(
-        Settings.llm_base_url.rstrip("/") + "/v1/messages",
-        {
-            "Content-Type": "application/json",
-            "x-api-key": Settings.api_key,
-            "anthropic-version": "2023-06-01",
-        },
-        {
-            "model": Settings.llm_model,
-            "max_tokens": 300,
-            "messages": [{"role": "user", "content": question}],
-        },
-    )
-    parts = payload.get("content") or []
-    text = "".join(p.get("text", "") for p in parts if p.get("type") == "text")
-    return text.strip(), Settings.llm_model
+    return ask_plain(question, max_tokens=300)["text"], Settings.llm_model
 
 
-def cold_local(question: str) -> tuple[str, str]:
+def local_door() -> tuple[str, str]:
+    """The local server leg 2 asks: the door in .env when it is local, else Ollama's default."""
+    if Settings.is_local:
+        return Settings.llm_base_url, Settings.llm_model
+    return DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
+
+
+def cold_local(question: str, base: str, model: str) -> tuple[str, str]:
     payload = _post(
-        LOCAL_BASE + "/chat/completions",
-        {"Content-Type": "application/json", "Authorization": "Bearer ollama"},
+        base + "/chat/completions",
+        {"Content-Type": "application/json", "Authorization": f"Bearer {_local_key(base)}"},
         {
-            "model": LOCAL_MODEL,
+            "model": model,
             "messages": [{"role": "user", "content": question}],
             "temperature": 0,
         },
     )
-    return payload["choices"][0]["message"]["content"].strip(), LOCAL_MODEL
+    return payload["choices"][0]["message"]["content"].strip(), model
 
 
 def retrieved(question: str) -> tuple[str, list]:
@@ -97,23 +89,26 @@ def main() -> int:
     print(RULE)
 
     print("\n[1] COLD, hosted frontier model, no documents")
-    if Settings.has_api_key:
+    if not Settings.has_api_key:
+        print("    skipped: LLM_API_KEY is not set. The other two legs still run.")
+    elif Settings.is_local:
+        print("    skipped: the door in .env is a local server, and leg [2] asks it.")
+    else:
         try:
-            text, model = cold_anthropic(QUESTION)
+            text, model = cold_hosted(QUESTION)
             print(f"    model: {model}")
             print(f"    {text}")
-        except urllib.error.HTTPError as exc:
-            print(f"    HTTP {exc.code}: {exc.read().decode('utf-8', 'replace')[:200]}")
-    else:
-        print("    skipped: LLM_API_KEY is not set. The other two legs still run.")
+        except (RuntimeError, TimeoutError) as exc:
+            print(f"    skipped: {exc}")
 
     print("\n[2] COLD, local model on this machine, no documents")
+    base, model = local_door()
     try:
-        text, model = cold_local(QUESTION)
+        text, model = cold_local(QUESTION, base, model)
         print(f"    model: {model}")
         print(f"    {text}")
     except Exception as exc:  # noqa: BLE001 - a missing Ollama is a normal state here
-        print(f"    skipped: no local model answered on {LOCAL_BASE} ({type(exc).__name__})")
+        print(f"    skipped: no local model answered on {base} ({type(exc).__name__})")
 
     print("\n[3] RETRIEVED from data/acme, the same question")
     name, hits = retrieved(QUESTION)

@@ -207,6 +207,50 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
     }
 
 
+def ask_plain(prompt: str, max_tokens: int = 300, timeout: int = 90) -> dict:
+    """One plain question to the door set in .env: no system prompt and no sources.
+
+    basics/cold_ask.py asks its hosted leg this way. It speaks Anthropic Messages on the anthropic
+    door and OpenAI chat completions everywhere else, the same split chat() makes, and raises
+    RuntimeError the way chat() does.
+    """
+    from rag.settings import Settings
+
+    key = api_key()
+    if not key and Settings.is_local:
+        key = _local_key(api_base())
+    if not key:
+        raise RuntimeError("no LLM_API_KEY set; a hosted door needs one")
+    messages = [{"role": "user", "content": prompt}]
+    if api_backend() == "anthropic":
+        url = api_base().rstrip("/") + "/v1/messages"
+        body = {"model": api_model(), "max_tokens": max_tokens, "messages": messages}
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": key,
+            "Authorization": "Bearer " + key,
+            "anthropic-version": "2023-06-01",
+        }
+        payload = _post(url, headers, body, timeout)
+        parts = payload.get("content") or []
+        text = "".join(
+            p.get("text", "") for p in parts if isinstance(p, dict) and p.get("type") == "text"
+        )
+    else:
+        # The same body chat() sends on this door, minus the system prompt: no length cap here.
+        url = api_base() + "/chat/completions"
+        body = {"model": api_model(), "messages": messages}
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {key}"}
+        payload = _post(url, headers, body, timeout)
+        text = payload.get("choices", [{}])[0].get("message", {}).get("content", "")
+    return {
+        "text": text.strip(),
+        "model": payload.get("model") or api_model(),
+        "endpoint": api_base(),
+        "backend": api_backend(),
+    }
+
+
 def chat(question: str, chunks: list[Chunk], timeout: int = 90) -> dict:
     from rag.settings import Settings
 
