@@ -421,8 +421,16 @@ def test_s12_5_nothing_on_screen_is_a_second_copy_of_the_graph():
 def test_s12_5_the_three_constants_the_vo_holds_on_screen():
     module = _part_3_module()
     assert module.QUESTION == "What are the main themes in this ACME corpus?"
-    # VO: 'four words we will hunt for: sequential, billing, least privilege, pii.'
-    assert module.FOUR_THEMES == ("sequential", "billing", "least-privilege", "pii")
+    # SCREEN: 'THEME_TERMS and grade, verbatim.' VO: 'Four themes, and a short list of
+    # words per theme written down before the run.'
+    assert module.THEME_TERMS == {
+        "sequential revenue reporting": ("sequential", "revenue", "quarter"),
+        "billing integrity": ("billing", "invoice", "ts-999"),
+        "least-privilege access": (
+            "least privilege", "least-privilege", "privileged", "tenant", "audit"
+        ),
+        "PII minimization": ("pii", "national id", "redact", "retention"),
+    }
     # VO: 'Themes across this corpus, with a colon. It is the whole lecture.'
     assert module.HAND_WRITTEN == "Themes across this corpus:"
     corpus = "\n".join(d.text for d in load_documents())
@@ -447,59 +455,76 @@ def test_s12_5_the_hand_written_sentence_is_the_only_thing_block_2_changes():
 
 
 def test_s12_5_global_mode_never_takes_a_question():
-    """VO: 'Notice what is missing from that function. There is no question in
-    it. Nothing gets searched.'"""
+    """VO: 'communities read, three; chunks searched at question time, zero. The
+    reading was done at index time.' Global mode is handed the corpus, never the
+    question, and never calls search."""
     import inspect
 
     module = _part_3_module()
-    sig = inspect.signature(module.summarize_communities)
+    sig = inspect.signature(module.read_summaries)
     assert list(sig.parameters) == ["docs"]
-    body = inspect.getsource(module.summarize_communities)
+    body = inspect.getsource(module.read_summaries)
     assert "QUESTION" not in body
-    assert "search" not in body
+    assert "search(" not in body
 
 
 def test_s12_5_the_run_prints_exactly_what_the_lecture_screens():
-    """Every line of all three blocks the VO reads off the terminal, pinned."""
+    """Every line of all three blocks the VO reads off the terminal, pinned.
+
+    The expected text is the capture block of the signed S12.5 script (2026-09-18),
+    verbatim: one grader, four of four, one of four, three of four."""
+    expected = "\n".join(
+        [
+            'QUESTION What are the main themes in this ACME corpus?',
+            '',
+            'BLOCK 1  vector search, corpus exactly as it ships',
+            '  collection s12_5_shipped   chunks indexed 10',
+            '  filing_q2_2023:fixed:1   0.3313',
+            '  privacy:fixed:0          0.3156   <- carries the hand written themes sentence',
+            '  figure_seats:fixed:0     0.2673',
+            '    sequential revenue reporting   COVERED  sequential',
+            '    billing integrity              COVERED  billing',
+            '    least-privilege access         COVERED  least-privilege',
+            '    PII minimization               COVERED  pii',
+            '  themes covered 4 of 4',
+            '',
+            'BLOCK 2  the same search, with that one sentence deleted',
+            '  removed 29 words from data/acme/policies/privacy.md in memory',
+            '  data/acme/policies/privacy.md on disk still 86 words, not edited',
+            '  collection s12_5_cut   chunks indexed 9',
+            '  filing_q2_2023:fixed:1   0.3313',
+            '  figure_seats:fixed:0     0.2673',
+            '  filing_q2_2023:fixed:0   0.2572',
+            '    sequential revenue reporting   COVERED  sequential',
+            '    billing integrity              MISSING',
+            '    least-privilege access         MISSING',
+            '    PII minimization               MISSING',
+            '  themes covered 1 of 4',
+            '',
+            'BLOCK 3  global mode on the same cut corpus, reading summaries',
+            '  community_0  entities: TS-999, billing, national id',
+            '    summary: TS-999 is not retryable. Duplicate invoice failures are TS-999.',
+            '  community_1  entities: revenue',
+            '    summary: Prior quarter revenue was 314 million USD. preface continues with ordinary language about risks, uncertainties, competitors, currency, and the possibility that actual results will differ.',
+            '  community_2  entities: audit, tenant',
+            '    summary: Shared runbooks are tagged tenant=shared. Privileged actions write an audit row.',
+            '  communities read 3   chunks searched at question time 0',
+            '  llm_extract_calls 0   seed dictionary, not a model extract',
+            '    sequential revenue reporting   COVERED  revenue',
+            '    billing integrity              COVERED  invoice',
+            '    least-privilege access         COVERED  privileged',
+            '    PII minimization               MISSING',
+            '  themes covered 3 of 4',
+        ]
+    )
     out = subprocess.run(
         [sys.executable, str(PART_3)], cwd=ROOT, capture_output=True, text=True, check=True
     ).stdout
-    assert out.startswith("QUESTION What are the main themes in this ACME corpus?\n")
-
-    # BLOCK 1: vector wins, and the flag says why.
-    assert "BLOCK 1  vector search, corpus exactly as it ships" in out
-    assert "  filing_q2_2023:fixed:1   0.3313" in out
-    assert (
-        "  privacy:fixed:0          0.3156   "
-        "<- carries the hand written themes sentence" in out
-    )
-    assert "  figure_seats:fixed:0     0.2673" in out
-    assert "  four themes in the retrieved strips: True" in out
-
-    # BLOCK 2: 29 words out and the same run goes red.
-    assert "BLOCK 2  the same search, with that one sentence deleted" in out
-    assert "  removed 29 words from data/acme/policies/privacy.md" in out
+    assert out.rstrip("\n") == expected
     # VO: 'Filing chunk one is sitting at exactly the same 0.3313.'
     assert out.count("  filing_q2_2023:fixed:1   0.3313") == 2
-    assert "  filing_q2_2023:fixed:0   0.2572" in out
-    assert "  four themes in the retrieved strips: False" in out
     # VO: 'Privacy is gone from the list entirely.'
     assert out.count("privacy:fixed:0") == 1
-
-    # BLOCK 3: three summaries, nothing searched.
-    assert "BLOCK 3  global mode on the same cut corpus, reading summaries" in out
-    assert "  community_0  entities: TS-999, billing, national id" in out
-    assert "    summary: TS-999 is not retryable. Duplicate invoice failures are TS-999." in out
-    assert "  community_1  entities: revenue" in out
-    assert "  community_2  entities: audit, tenant" in out
-    assert (
-        "    summary: Shared runbooks are tagged tenant=shared. "
-        "Privileged actions write an audit row." in out
-    )
-    assert "  communities read 3   chunks searched at question time 0" in out
-    assert out.rstrip().endswith(
-        "  llm_extract_calls 0   seed dictionary, not a model extract"
-    )
     # No key, no network: the file imports nothing that reaches a provider.
     source = PART_3.read_text(encoding="utf-8")
     assert "rag.llm" not in source and "rag.embed " not in source
