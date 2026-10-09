@@ -2,24 +2,14 @@
 
 Python 3.13 (recommended; 3.11 and 3.12 also work), VS Code and Git. **No API key.**
 
-Clone the repo and work from its folder:
+Keep your code in one folder, for example `C:\code` on Windows (`mkdir C:\code`, then `cd C:\code`) or `~/code` on macOS (`mkdir ~/code`, then `cd ~/code`). Clone the repo there and work from its folder:
 
 ```
 git clone https://github.com/pragatidev/advanced-rag-workbench.git
 cd advanced-rag-workbench
 ```
 
-## With uv (preferred)
-
-```
-uv sync
-copy .env.example .env
-uv run pytest
-```
-
-On macOS and Linux, use `cp` instead of `copy`.
-
-## With pip
+## Set up with pip
 
 Windows, Command Prompt:
 
@@ -61,8 +51,6 @@ If a step prints an error, find its text in [TROUBLESHOOTING.md](TROUBLESHOOTING
 
 pytest needs no key and calls no model. It prints rows of dots and ends with one line, `N passed, 1 skipped`. The skip is pgvector, which needs Docker.
 
-`requirements.txt` is exported from `uv.lock`, so pip and uv install the same versions.
-
 ## The first lab
 
 Open this folder in VS Code and pick the `.venv` interpreter. Then:
@@ -73,22 +61,34 @@ python labs/lab_s2_env/part_1/setup_clone.py
 
 It prints your Python version, checks the repo files, runs the full suite and ends with `pytest_exit 0`. The same lab as a notebook: `notebooks/section_02_set_up_any_provider_and_local/part_1_setup_clone.py`.
 
+## Optional: uv instead of pip
+
+If you already use uv, these lines replace the pip steps. `requirements.txt` is exported from `uv.lock`, so both install the same versions.
+
+```
+uv sync
+copy .env.example .env
+uv run pytest
+```
+
+On macOS and Linux, use `cp` instead of `copy`.
+
 ## Optional: pgvector
 
 ```
 docker compose up -d
 ```
 
-Install the driver with `uv sync --extra pgvector`, or with pip: `pip install "psycopg[binary]==3.3.4"`. Then run `labs/lab_s3_naive/part_3/compare_stores.py`.
+Install the driver with pip, `pip install "psycopg[binary]==3.3.4"`, or with uv, `uv sync --extra pgvector`. Then run `labs/lab_s3_naive/part_3/compare_stores.py`.
 
 ## Optional: extras
 
 ```
-uv sync --extra local-rerank
-uv sync --extra docling
+pip install "sentence-transformers==3.4.1"
+pip install "docling==2.31.0"
 ```
 
-With pip: `pip install "sentence-transformers==3.4.1"` (local cross-encoder) or `pip install "docling==2.31.0"`.
+The first is the local cross-encoder, the second Docling. With uv: `uv sync --extra local-rerank` or `uv sync --extra docling`.
 
 ## Optional: a model that writes the answers
 
