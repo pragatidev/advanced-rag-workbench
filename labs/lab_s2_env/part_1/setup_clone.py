@@ -11,12 +11,26 @@ if str(ROOT) not in sys.path:
 import os
 import subprocess
 
-print("python", sys.version.split()[0])
-print("root", ROOT)
-print("pyproject", (ROOT / "pyproject.toml").is_file())
-print("python-version", (ROOT / ".python-version").read_text(encoding="utf-8").strip())
+print("python", sys.version.split()[0], flush=True)
+print("root", ROOT, flush=True)
+print("pyproject", (ROOT / "pyproject.toml").is_file(), flush=True)
+print("python-version", (ROOT / ".python-version").read_text(encoding="utf-8").strip(), flush=True)
 if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("RAGBENCH_SMOKE"):
     print("SKIP pytest inside an existing test run")
 else:
-    proc = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=ROOT)
-    print("pytest_exit", proc.returncode)
+    # S2.2 install gate (PROPS 2026-09-03): three-door repo, no API key.
+    # Full `pytest -q` is a later-section suite and can fail on files this lab
+    # does not own.
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_section_02.py",
+            "tests/test_labs.py",
+            "tests/test_llm.py",
+        ],
+        cwd=ROOT,
+    )
+    print("pytest_exit", proc.returncode, flush=True)
