@@ -113,9 +113,9 @@ entry). If none of them is, install Python 3.13 from python.org and open a new t
 ### I have Python 3.11 or 3.12, not 3.13
 
 There is no error, and you do not need to reinstall. The repo supports 3.11, 3.12 and 3.13 and recommends 3.13. On
-2026-10-09 a fresh clone passed the whole suite on all three, with the same count each time: `150 passed, 1 skipped`
-on Python 3.11.9, 3.12.13 and 3.13.14, and the first lab ended `pytest_exit 0` on each. The one skip is pgvector, which
-needs Docker.
+2026-10-09 a fresh clone passed the whole suite on Python 3.11.9, 3.12.13 and 3.13.14, with the same count line on
+each, and the first lab ended `pytest_exit 0` on each. The count line looks like `N passed, 1 skipped`: the number
+grows as the course adds tests, and the one skip is pgvector, which needs Docker.
 
 ### PowerShell will not run the activate script
 
@@ -212,7 +212,7 @@ What it means: you ran `labs/lab_s2_env/part_1/setup_clone.py` with a Python tha
 the venv, or a venv nothing was installed into.
 
 Fix **(tested)**: activate the venv, install if you have not, and run the lab again. It then prints the rows of dots,
-`150 passed, 1 skipped`, and `pytest_exit 0`.
+a count line like `N passed, 1 skipped` (the number grows as the course adds tests), and `pytest_exit 0`.
 
 ### `ModuleNotFoundError: No module named 'numpy'`, or another package
 
@@ -294,13 +294,14 @@ D:\rag_r3\gh\advanced-rag-workbench\.venv\Scripts\python.exe: can't open file 'D
 D:\rag_r3\gh\advanced-rag-workbench\.venv\Scripts\python.exe: No module named rag
 ```
 
-(`python -m rag ask ...`.) And `pytest` from the folder above collects the repo's tests without the repo's settings:
+(`python -m rag ask ...`.) And `pytest` from the folder above collects the repo's tests without the repo's settings,
+so test file after test file fails on this line:
 
 ```
-!!!!!!!!!!!!!!!!!! Interrupted: 30 errors during collection !!!!!!!!!!!!!!!!!!!
+E   ModuleNotFoundError: No module named 'rag'
 ```
 
-with `E   ModuleNotFoundError: No module named 'rag'` under each test file.
+and the run stops with an `Interrupted: ... errors during collection` line. The cause is that line, not the count.
 
 What it means: the terminal is in the folder that holds `advanced-rag-workbench`, not in it. The path in the error
 shows where it looked.
