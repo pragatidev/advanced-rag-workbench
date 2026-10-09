@@ -14,7 +14,8 @@ questions = [
     "Good morning, how are you?",
     "What was ACME revenue growth in Q2 2023?",
     "What are the main themes in this ACME corpus?",
-    "What does error code TS-999 mean?",
+    "How many paid seats did ACME have in Q2?",
+    "What is the ACME access control policy on PII?",
 ]
 for q in questions:
     print(route(q), q)
