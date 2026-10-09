@@ -1,4 +1,4 @@
-"""Chat generate. OpenAI-compatible or Anthropic-compatible (Token Plan / Qwen)."""
+"""Chat generate. OpenAI-compatible /chat/completions or Anthropic Messages /v1/messages."""
 
 from __future__ import annotations
 

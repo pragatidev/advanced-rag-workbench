@@ -21,7 +21,12 @@ def main(argv: list[str] | None = None) -> int:
         "--generate",
         default=None,
         choices=["extractive", "api"],
-        help="extractive = no key. api = OpenAI-compatible (Qwen Token Plan).",
+        help=(
+            "extractive = copy the answer from the retrieved text, no key. "
+            "api = the model set in .env writes it; needs LLM_API_KEY (the local door uses ollama), "
+            "and with no key it prints SKIPPED and stays extractive. "
+            "Default: RAGBENCH_GENERATE in .env."
+        ),
     )
 
     ev = sub.add_parser("eval")

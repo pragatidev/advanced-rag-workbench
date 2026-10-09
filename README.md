@@ -107,7 +107,7 @@ Retrieval never needs a model. Generate does, and the workbench reaches every mo
 
 | Door | `LLM_BACKEND` | `LLM_BASE_URL` | `LLM_API_KEY` | `LLM_MODEL` |
 |---|---|---|---|---|
-| Local, Ollama (the default) | `openai` | `http://localhost:11434/v1` | `ollama` (ignored) | `qwen3:8b` |
+| Local, Ollama (the default) | `openai` | `http://localhost:11434/v1` | `ollama` (Ollama ignores it, but generate needs it set) | `qwen3:8b` |
 | Anthropic | `anthropic` | `https://api.anthropic.com` | your key | `claude-haiku-4-5` |
 | OpenAI-compatible | `openai` | `https://api.openai.com/v1` | your key | `gpt-5.6-luna` |
 
@@ -115,7 +115,7 @@ With no `.env`, the workbench uses the local door: `qwen3:8b` on Ollama (`ollama
 
 Anthropic speaks its own Messages API, which is why it sets `LLM_BACKEND=anthropic`. Every other vendor that speaks the OpenAI chat format is the OpenAI-compatible door with its own base URL and model id, for example Qwen on Alibaba Model Studio at `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`. Take the model id from that vendor's docs. `.env.example` has each block ready to uncomment.
 
-Answers are extractive (copied from the retrieved text) until a hosted key is set. To have the local model write them, pass `--generate api` or set `RAGBENCH_GENERATE=api`. Without a server or a key, generate prints `SKIPPED` and the answer stays extractive.
+Answers are extractive (copied from the retrieved text) by default, and `.env.example` keeps them that way with `RAGBENCH_GENERATE=extractive`. To have the model write them, fill in one door in `.env` and set `RAGBENCH_GENERATE=api`, or pass `--generate api` for one question. Generate needs `LLM_API_KEY` set, so the local door sets it to `ollama`. With no key, generate prints `SKIPPED` and the answer stays extractive.
 
 Embeddings are a separate choice: `EMBED_MODEL=all-MiniLM-L6-v2`, a real local model that runs through Chroma and downloads once on first use. pytest uses the offline `HashEmbedder`, so it never downloads anything.
 

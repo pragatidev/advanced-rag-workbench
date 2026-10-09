@@ -1,5 +1,9 @@
 # Rebuild run report
 
+Note, 2026-10-09: this is the August report, kept as history. Two of its notes are out of date. The default generate
+model is `qwen3:8b` on local Ollama at `http://localhost:11434/v1` (see `rag/settings.py`), not `qwen3.8-max` on
+DashScope, and the repo has no vendor default.
+
 Date: 2026-08-15
 Repo: student-facing course workbench (this git repo)
 Curriculum: v1.0 LOCKED (17 sections, 96 lectures, 60 lab parts)
