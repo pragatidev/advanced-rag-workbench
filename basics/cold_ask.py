@@ -37,7 +37,7 @@ from rag.settings import Settings
 
 QUESTION = "What does error code TS-999 mean? Answer in one or two sentences."
 LOCAL_BASE = "http://localhost:11434/v1"
-LOCAL_MODEL = "llama3.2:3b"
+LOCAL_MODEL = "qwen3:8b"
 RULE = "=" * 78
 
 

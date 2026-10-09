@@ -53,5 +53,5 @@ def test_env_example_has_the_three_doors():
     text = (ROOT / ".env.example").read_text(encoding="utf-8")
     assert "https://api.anthropic.com" in text and "claude-haiku-4-5" in text
     assert "https://api.openai.com/v1" in text and "gpt-5.6-luna" in text
-    assert "http://localhost:11434/v1" in text and "llama3.2:3b" in text
+    assert "http://localhost:11434/v1" in text and "LLM_MODEL=qwen3:8b" in text
     assert "EMBED_MODEL=all-MiniLM-L6-v2" in text

@@ -16,7 +16,7 @@ STORE_ROOT = ROOT / "store"
 # .env.example could not change it. Local Ollama is the honest default: free, no key, and
 # nothing leaves the machine. Set the LLM_* triple in .env to point anywhere else.
 DEFAULT_LLM_BASE_URL = "http://localhost:11434/v1"
-DEFAULT_LLM_MODEL = "llama3.2:3b"
+DEFAULT_LLM_MODEL = "qwen3:8b"
 # A REAL local embedder, free and keyless, already installed with the requirements.
 # This used to default to "nomic-embed-text", which get_embedder silently resolved to the
 # 64-dimension teaching toy while printing the hosted name on screen.
@@ -30,6 +30,7 @@ LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
 
 # Verified laptop-capable Ollama tags (curriculum_gap_list.json, access 2026-08-15).
 OLLAMA_GENERATE_MODELS = (
+    "qwen3:8b",
     "llama3.2:3b",
     "llama3.2:1b",
     "gemma3:4b",

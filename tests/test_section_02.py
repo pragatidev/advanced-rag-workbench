@@ -16,7 +16,7 @@ def test_section_02_settings_and_env_example():
                    "11434/v1", "1234/v1", ANTHROPIC["default_model"], OPENAI["default_model"]):
         assert needle in example, needle
     # no vendor default: the repo starts local and keyless
-    assert DEFAULT_LLM_MODEL == "llama3.2:3b"
+    assert DEFAULT_LLM_MODEL == "qwen3:8b"
     assert DEFAULT_LLM_BASE_URL == "http://localhost:11434/v1"
     print("base", Settings.llm_base_url, "model", Settings.llm_model)
 
