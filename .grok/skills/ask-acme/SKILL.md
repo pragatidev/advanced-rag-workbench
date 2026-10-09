@@ -7,8 +7,10 @@ description: Answer a question over the ACME policy, filing, error catalog, FAQ,
 
 This is how a harness invokes RAG. Do not invent file contents. Retrieve first.
 
+From the repo root, with the venv active:
+
 ```
-python -m ragbench ask "<their question>" --pipeline hybrid
+python -m rag ask "<their question>" --pipeline hybrid
 ```
 
 Read the JSON. Cite `chunk_id` values. If the answer is REFUSE, say the retrieve missed and do not guess.
@@ -16,11 +18,11 @@ Read the JSON. Cite `chunk_id` values. If the answer is REFUSE, say the retrieve
 A real product does not use the CLI. It imports the same function:
 
 ```
-from ragbench import run_ask
+from rag import run_ask
 run_ask(question, pipeline="hybrid")
 ```
 
-Or it POSTs to the desk:
+Or it POSTs to the desk that `python app.py` serves:
 
 ```
 POST http://127.0.0.1:8787/ask
@@ -32,5 +34,5 @@ Ticket-shaped wrapper: `python examples/ticket_desk.py`
 To compare pipelines:
 
 ```
-python -m ragbench eval --a naive --b hybrid
+python -m rag eval --a naive --b hybrid
 ```
