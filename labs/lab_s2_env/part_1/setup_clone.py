@@ -18,19 +18,8 @@ print("python-version", (ROOT / ".python-version").read_text(encoding="utf-8").s
 if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("RAGBENCH_SMOKE"):
     print("SKIP pytest inside an existing test run")
 else:
-    # S2.2 install gate (PROPS 2026-09-03): three-door repo, no API key.
-    # Full `pytest -q` is a later-section suite and can fail on files this lab
-    # does not own.
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-q",
-            "tests/test_section_02.py",
-            "tests/test_labs.py",
-            "tests/test_llm.py",
-        ],
-        cwd=ROOT,
-    )
+    # The install gate: the full suite, every section, no API key, about 20 seconds.
+    # pytest.ini adds -q, so it prints dots and one count line (the s is pgvector,
+    # which skips unless Docker is up).
+    proc = subprocess.run([sys.executable, "-m", "pytest"], cwd=ROOT)
     print("pytest_exit", proc.returncode, flush=True)
