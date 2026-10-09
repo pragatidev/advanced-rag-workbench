@@ -173,6 +173,34 @@ What it means: Windows does not come with `make`. The Makefile is a shortcut, no
 Fix **(tested)**: type the command the target runs. `make test` is `python -m pytest`, `make smoke` is
 `python scripts/smoke_all.py`, and `make section-8b` is `python -m pytest tests/test_section_08b.py`.
 
+### `code` is not recognized
+
+`code .` in Command Prompt:
+
+```
+'code' is not recognized as an internal or external command,
+operable program or batch file.
+```
+
+In PowerShell:
+
+```
+code : The term 'code' is not recognized as the name of a cmdlet, function, script file, or operable program. Check
+the spelling of the name, or if a path was included, verify that the path is correct and try again.
+```
+
+What it means: the terminal cannot find VS Code's `code` command. On Windows the VS Code installer puts it on your
+PATH, and VS Code's setup page says: "Restart your console after installation, then run code . in a folder to open
+that folder in VS Code." So the usual cause is a terminal that was already open when VS Code was installed. On the test
+machine it was caused by leaving VS Code's `bin` folder off the PATH.
+
+Fix **(not tested here, VS Code was already installed)**: close the terminal, open a new one in the repo folder, and
+run `code .` again. What was tested: with VS Code's `bin` folder on the PATH, as a new terminal has it, `where code`
+found it and `code --version` printed `1.140.0`.
+
+On a Mac, VS Code's setup page gives a step you do once **(not tested here)**: open the Command Palette (Cmd+Shift+P),
+type `shell command`, run Shell Command: Install 'code' command in PATH, then restart the terminal.
+
 ## The venv
 
 ### `pytest` is not recognized
@@ -362,6 +390,48 @@ Fix **(tested)**: once the model is downloaded, the lab needs no network: on the
 a network that can reach the internet, or remove a proxy setting you do not need (`HTTPS_PROXY`, `HTTP_PROXY`). pytest
 never downloads anything.
 
+## Ollama
+
+These two were caused on the test machine with a real Ollama 0.35.1, run on the CPU at its own address.
+
+### `ollama pull` says `file does not exist`
+
+After a few `pulling manifest` lines:
+
+```
+Error: pull model manifest: file does not exist
+```
+
+On the test machine `ollama pull qwen3-8b`, with a dash where the colon goes, printed this in both shells. With a space
+instead, `ollama pull qwen3 8b` printed:
+
+```
+Error: accepts 1 arg(s), received 2
+```
+
+What it means: the model name is mistyped. It is `qwen3`, a colon, then `8b`, with no spaces. Ollama's model library
+has `qwen3:8b` and nothing called `qwen3-8b`, so the pull stops before anything downloads.
+
+Fix **(not tested here, the model was already on the test machine)**: `ollama pull qwen3:8b`. When it is done,
+`ollama list` shows a line for `qwen3:8b` with `5.2 GB`.
+
+### `ollama list` says `timed out waiting for server to start`
+
+After a few lines of Ollama's own log (`starting Ollama`, `existing instance found`):
+
+```
+Error: timed out waiting for server to start
+```
+
+What it means: the `ollama` command could not reach an Ollama server, so it tried to start Ollama, and no server
+answered in time. On the test machine the Ollama app was running but no Ollama server answered at the address the
+command asks, and the command gave up after about five seconds.
+
+Fix **(tested)**: start the server and run the command again. On the test machine, once a server was running at that
+address, the same `ollama list` printed the list of models, `qwen3:8b` among them. On your machine **(not tested
+here)**: Ollama's Windows docs say to quit the Ollama app from its icon in the taskbar and start it again from the
+Start menu; on a Mac, start the Ollama app from Applications. Then run `ollama list` again.
+
 ## Calling a model
 
 The model errors below were caused with the stand-in server described at the top. Where your output shows a base URL
@@ -496,10 +566,16 @@ text. Retrieval never needs a key.
 
 ## Asking for help
 
-If none of this fixes it, ask in the course Q&A on Udemy. Put three things in your question:
+If none of this fixes it, ask in the course's Q&A on Udemy. Udemy's help page (updated 2026-10-08) says to open it
+like this: in the course player, click the Udemy AI Assistant icon at the top right of the player, then click View
+course Q&A below the question box. Search there first, because someone may have asked already. If not, click Ask a new
+question, give it a title, and put three things in it:
 
 - the command you ran and the folder you ran it in;
 - the full output, from the command to the last line, pasted as text;
 - your door: Ollama and the model, or the provider and the model id from your `.env`.
+
+To keep pasted output readable, select it and click the code icon in the Q&A toolbar. The same page also says: "The
+Q&A and messaging features are not available in free course enrollments."
 
 Never paste your API key. Delete the key line from anything you post.
