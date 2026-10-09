@@ -8,8 +8,8 @@ Section numbers are the course map in the main README.md. Folder names are older
 
 | # | Section | Folder |
 |---:|---|---|
-| 1 | Why RAG, Where It Fits, and What It Costs You | `section_01_get_oriented/` |
-| 2 | The Workbench: Any Model, Any Provider, and a Private Option | `section_02_set_up_any_provider_and_local/` |
+| 1 | Why RAG, What You Will Build, Setup, and Your First RAG Run | `section_01_get_oriented/` and `section_02_set_up_any_provider_and_local/` |
+| 2 | How a Language Model Answers, and Why It Does Not Know Your Files | none (its script is `basics/cold_ask.py`) |
 | 5 | Naive RAG: Chunk, Embed, Retrieve, Then Generate | `section_03_run_naive_rag/` |
 | 6 | Why Naive RAG Fails: Orphans, Goldens, Embedders | `section_04_watch_naive_fail/` |
 | 7 | Semantic Chunking: Cut by Meaning, Measure the Difference | `section_05_chunk_with_a_measured_reason/` |
@@ -29,6 +29,6 @@ Section numbers are the course map in the main README.md. Folder names are older
 | 22 | Ship One Pipeline: Design Walk, Metrics File, Decision Note | `section_17_ship_one_pipeline_from_evidence/` |
 | 23 | Optional. 2026 Frontier Cards You Can Skip | `section_18_optional_2026_frontier_cards/` |
 
-Sections 3, 4 and 15 have no folder here: their scripts are `basics/` (sections 3 and 4) and `labs/lab_s11b_hop/` with `hop_budget.py` (section 15).
+Sections 2, 3, 4 and 15 have no folder of their own: their scripts are `basics/` (sections 2, 3 and 4) and `labs/lab_s11b_hop/` with `hop_budget.py` (section 15). Section 1 has two: `section_01_get_oriented/` holds three short walks, and `section_02_set_up_any_provider_and_local/` holds the twins of the setup lab, `labs/lab_s2_env/`.
 
 The runnable source of truth is `labs/`. Concept cards are `docs/mechanisms/`.

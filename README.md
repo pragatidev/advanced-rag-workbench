@@ -27,8 +27,8 @@ No key is needed for retrieval, the labs or pytest. pytest ends with one count l
 
 | # | Section | Notebook folder | Lab |
 |---:|---|---|---|
-| 1 | Why RAG, Where It Fits, and What It Costs You | `notebooks/section_01_get_oriented/` | `basics/cold_ask.py`, `basics/grounded_ask.py`, `basics/two_chunks_flags.py` |
-| 2 | The Workbench: Any Model, Any Provider, and a Private Option | `notebooks/section_02_set_up_any_provider_and_local/` | `labs/lab_s2_env/` |
+| 1 | Why RAG, What You Will Build, Setup, and Your First RAG Run | `notebooks/section_01_get_oriented/` (three short walks) and `notebooks/section_02_set_up_any_provider_and_local/` (the setup lab's twins) | `labs/lab_s2_env/`, `basics/cold_ask.py`, `basics/grounded_ask.py`, `basics/two_chunks_flags.py` |
+| 2 | How a Language Model Answers, and Why It Does Not Know Your Files | none | `basics/cold_ask.py` |
 | 3 | Foundations: Embeddings, Cosine, and Your First Cut (skip if you already ship RAG) | none | `basics/embed_two_sentences.py`, `basics/similarity_scores.py`, `basics/cut_one_document.py` |
 | 4 | Foundations: Store, Ask, and Your First RAG Program (skip if you already ship RAG) | none | `basics/store_and_ask.py`, `basics/mini_rag.py` |
 | 5 | Naive RAG: Chunk, Embed, Retrieve, Then Generate | `notebooks/section_03_run_naive_rag/` | `labs/lab_s3_naive/` |
@@ -59,7 +59,7 @@ Concept cards: `docs/mechanisms/`. Product door: `python app.py` or `from rag im
 
 | Folder | What it holds |
 |---|---|
-| `basics/` | Eight one-idea scripts for sections 1, 3 and 4: a cold ask, the same question looked up and then answered, the two pieces of a fixed cut, embeddings, cosine, one document cut, store and ask, and a mini RAG. No key; the two asks call a model when one is running. |
+| `basics/` | Eight one-idea scripts for sections 1 to 4: a cold ask, the same question looked up and then answered, the two pieces of a fixed cut, embeddings, cosine, one document cut, store and ask, and a mini RAG. No key; the two asks call a model when one is running. |
 | `data/` | The one corpus, `data/acme/`: an FAQ, a figure caption, a Q2 filing excerpt, two policies, an error catalog, and a KPI table as Markdown and PDF. |
 | `demo/` | `cold_ask.txt`, a saved run of the section 1 cold ask: two models asked about TS-999 with no documents. |
 | `docs/` | `corpus_map.md` (what is in the corpus) and `mechanisms/`, one concept card per idea, plus the section 23 code sample `classify_invoice.py`. |
