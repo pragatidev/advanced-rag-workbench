@@ -1,6 +1,6 @@
 # An OTel-shaped trace
 
-This is not a Langfuse install. It is a JSONL span with the names OpenTelemetry GenAI conventions use:
+This is not a Langfuse install. It is a JSONL span with names shaped to match the OpenTelemetry GenAI conventions, and one of them, `gen_ai.request.model`, is theirs:
 
 - `trace_id`, `span_id`
 - `latency_ms`

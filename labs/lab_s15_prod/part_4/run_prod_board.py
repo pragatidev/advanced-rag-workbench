@@ -13,13 +13,14 @@ import time
 
 from rag.cache import SemanticCache
 from rag.eval.cost import estimate
-from rag.observe import log_ask, missing_span_fields, shape_span
+from rag.observe import REQUIRED_SPAN_FIELDS, log_ask, missing_span_fields, shape_span
 from rag.pipelines.hybrid import run_hybrid
 from rag.pipelines.naive import run_naive
 
 cache = SemanticCache()
 q = "What does error code TS-999 mean?"
 board = {"generate_calls": 0, "cache_hits": 0, "traces": []}
+print("=== two pipelines ===")
 for name, fn in (("naive", run_naive), ("hybrid", run_hybrid)):
     look = cache.lookup(q)
     t0 = time.perf_counter()
@@ -50,13 +51,34 @@ for name, fn in (("naive", run_naive), ("hybrid", run_hybrid)):
     assert not missing_span_fields(span)
     board["traces"].append(span)
     log_ask(span, ROOT / "runs" / "ask.jsonl")
+    print(
+        name,
+        "cache",
+        look["status"],
+        "generate_calls",
+        gens,
+        "usd",
+        span["usd"],
+        "chunk_ids",
+        span["chunk_ids"],
+    )
 # repeat hybrid: should HIT
 look = cache.lookup(q)
 if look["status"] == "HIT":
     board["cache_hits"] += 1
+print("repeat hybrid", look["status"])
+print("=== board ===")
+print("generate_calls", board["generate_calls"], "cache_hits", board["cache_hits"])
+print("traces", len(board["traces"]))
+print("=== last two spans ===")
+for span in board["traces"][-2:]:
+    row = {name: span[name] for name in REQUIRED_SPAN_FIELDS}
+    row["pipeline"] = span["pipeline"]
+    row["cache_status"] = span["cache_status"]
+    row["generate_calls"] = span["generate_calls"]
+    print(json.dumps(row, ensure_ascii=False))
+    print("missing", missing_span_fields(span))
 dest = ROOT / "runs" / "smoke" / "prod_board.json"
 dest.parent.mkdir(parents=True, exist_ok=True)
 dest.write_text(json.dumps(board, indent=2), encoding="utf-8")
-print("generate_calls", board["generate_calls"], "cache_hits", board["cache_hits"])
-print("traces", len(board["traces"]))
-print("wrote", dest)
+print("wrote", dest.relative_to(ROOT).as_posix())

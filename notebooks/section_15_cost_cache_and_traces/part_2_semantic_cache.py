@@ -16,12 +16,21 @@ if str(ROOT) not in sys.path:
 
 from rag.cache import SemanticCache
 
+Q = "What does error code TS-999 mean?"
+NEAR = "What does TS-999 mean?"
+PERSONAL = "What does my invoice TS-999 mean?"
+ANSWER = "Duplicate invoice. Do not retry."
+
 cache = SemanticCache(threshold=0.92)
-cache.store("What does error code TS-999 mean?", "Duplicate invoice. Do not retry.")
-exact = cache.lookup("What does error code TS-999 mean?")
-near = cache.lookup("What does error code TS-999 mean?")
-skip = cache.lookup("What does my invoice TS-999 mean?", personalized=True)
-print(exact["status"], "generate", exact["generate"])
-print("threshold_decision", near["status"], near.get("sim"))
-print(skip["status"])
+cache.store(Q, ANSWER)
+exact = cache.lookup(Q)
+near = cache.lookup(NEAR)
+cache80 = SemanticCache(threshold=0.80)
+cache80.store(Q, ANSWER)
+near80 = cache80.lookup(NEAR)
+skip = cache.lookup(PERSONAL, personalized=True)
+print(exact["status"], "generate", exact["generate"], "sim", exact.get("sim"))
+print("threshold_decision", near["status"], "sim", round(float(near.get("sim") or 0), 4), "threshold", cache.threshold)
+print("maybe HIT status", near80["status"], "sim", round(float(near80.get("sim") or 0), 4), "threshold", cache80.threshold)
+print(skip["status"], "generate", skip["generate"])
 print("generate_calls on hit", 0 if exact["status"] == "HIT" else 1)
