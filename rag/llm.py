@@ -47,16 +47,29 @@ def _local_key(base: str) -> str:
     return "ollama" if "11434" in base else "lm-studio"
 
 
+def _sampling(body: dict) -> dict:
+    """temperature 0 for a server on this machine only, so a lesson's capture repeats.
+
+    A hosted door gets the provider's default. Anthropic's model pages (read 2026-10-09) say a
+    non-default temperature returns a 400 on the Claude 5.5 models, and OpenAI's GPT-6 guide says to
+    remove temperature when reasoning effort is not none, which is the default.
+    """
+    from rag.settings import Settings
+
+    if Settings.is_local:
+        body["temperature"] = 0
+    return body
+
+
 def _chat_openai(question: str, chunks: list[Chunk], timeout: int, key: str) -> dict:
     url = api_base() + "/chat/completions"
-    body = {
+    body = _sampling({
         "model": api_model(),
         "messages": [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": _source_blob(question, chunks)},
         ],
-        "temperature": 0,
-    }
+    })
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {key}",
@@ -73,13 +86,12 @@ def _chat_openai(question: str, chunks: list[Chunk], timeout: int, key: str) -> 
 
 def _chat_anthropic(question: str, chunks: list[Chunk], timeout: int, key: str) -> dict:
     url = api_base().rstrip("/") + "/v1/messages"
-    body = {
+    body = _sampling({
         "model": api_model(),
         "max_tokens": 512,
         "system": SYSTEM,
         "messages": [{"role": "user", "content": _source_blob(question, chunks)}],
-        "temperature": 0,
-    }
+    })
     headers = {
         "Content-Type": "application/json",
         # Both auth styles: real Anthropic reads x-api-key; OpenAI-compatible and
@@ -151,12 +163,11 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
     anthropic = Settings.api_backend == "anthropic"
     if anthropic:
         url = base.rstrip("/") + "/v1/messages"
-        body = {
+        body = _sampling({
             "model": model,
             "max_tokens": 64,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0,
-        }
+        })
         headers = {
             "Content-Type": "application/json",
             "x-api-key": key,
@@ -165,11 +176,10 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
         }
     else:
         url = base.rstrip("/") + "/chat/completions"
-        body = {
+        body = _sampling({
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0,
-        }
+        })
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {key}",

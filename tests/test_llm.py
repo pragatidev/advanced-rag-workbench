@@ -4,6 +4,7 @@ import pytest
 
 import rag.generate
 import rag.llm
+import rag.settings
 from rag.envload import api_base, api_model, generate_mode
 from rag.generate import generate_answer
 from rag.chunkers import Chunk
@@ -146,3 +147,44 @@ def test_generate_with_no_local_server_is_skipped_not_a_traceback(monkeypatch):
     assert meta["note"].startswith(
         "SKIPPED: model not reachable at http://localhost:11434/v1/chat/completions ("
     )
+
+
+def _bodies_sent(monkeypatch, backend: str, base: str, key: str) -> list:
+    """The bodies chat() and ping() send on one door; nothing leaves the machine."""
+    _local_door(monkeypatch, key=key)
+    monkeypatch.setattr(rag.settings, "load_env", lambda path=None: None)
+    monkeypatch.setenv("LLM_BACKEND", backend)
+    monkeypatch.setenv("LLM_BASE_URL", base)
+    monkeypatch.setattr(rag.llm, "_port_open", lambda host, port, timeout=0.3: True)
+    calls = []
+
+    def fake(url, headers, body, timeout):
+        calls.append(body)
+        if url.endswith("/v1/messages"):
+            return {"model": body["model"], "content": [{"type": "text", "text": "pong"}]}
+        return {"model": body["model"], "choices": [{"message": {"content": "pong"}}]}
+
+    monkeypatch.setattr(rag.llm, "_post", fake)
+    chunk = Chunk(chunk_id="c", doc_id="d", title="t", text="TS-999 means duplicate invoice.")
+    chat("What is TS-999?", [chunk])
+    assert rag.llm.ping()["ok"] is True
+    return calls
+
+
+def test_hosted_doors_send_no_temperature(monkeypatch):
+    # Claude 5.5 models answer a non-default temperature with a 400, and OpenAI says to drop it on
+    # GPT-6 at its default reasoning effort. A hosted door gets the provider's default.
+    for backend, base in (("anthropic", "https://api.anthropic.com"), ("openai", "https://api.openai.com/v1")):
+        bodies = _bodies_sent(monkeypatch, backend, base, key="test-key")
+        assert len(bodies) == 2
+        for body in bodies:
+            assert "temperature" not in body, (backend, body)
+
+
+def test_local_door_keeps_temperature_zero(monkeypatch):
+    # A server on this machine keeps temperature 0, so a lesson's capture repeats: the request
+    # body is the same, key for key and in the same order, as before hosted doors dropped it.
+    for base in ("http://localhost:11434/v1", "http://localhost:1234/v1"):
+        bodies = _bodies_sent(monkeypatch, "openai", base, key="")
+        assert [list(b) for b in bodies] == [["model", "messages", "temperature"]] * 2
+        assert all(b["temperature"] == 0 for b in bodies)
