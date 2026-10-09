@@ -55,6 +55,8 @@ pytest
 
 No `py` or `python3.13` command? Any Python 3.13 works: `python -m venv .venv`, then the same lines.
 
+If a step prints an error, find its text in [TROUBLESHOOTING.md](TROUBLESHOOTING.md): each entry is the exact error, what it means, and the fix.
+
 ## What green looks like
 
 pytest needs no key and calls no model. It prints rows of dots and ends with one line, `N passed, 1 skipped`. The skip is pgvector, which needs Docker.

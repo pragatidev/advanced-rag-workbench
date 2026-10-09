@@ -77,7 +77,7 @@ Concept cards: `docs/mechanisms/`. Product door: `python app.py` or `from rag im
 | `.claude/`, `.grok/` | The same `ask-acme` agent skill, for Claude Code and for Grok. |
 | `_planning/` | Two build reports from the August 2026 rebuild. History, not course material. |
 
-At the root: `app.py` (the product door, an HTTP endpoint on port 8787), `hop_budget.py` (section 15), `pyproject.toml`, `uv.lock` and `requirements.txt` (the same pinned versions), `.env.example`, `docker-compose.yml` (optional pgvector), `Makefile`, `pytest.ini`.
+At the root: `INSTALL.md` (setup step by step), `TROUBLESHOOTING.md` (every error we have seen, with its fix), `app.py` (the product door, an HTTP endpoint on port 8787), `hop_budget.py` (section 15), `pyproject.toml`, `uv.lock` and `requirements.txt` (the same pinned versions), `.env.example`, `docker-compose.yml` (optional pgvector), `Makefile`, `pytest.ini`.
 
 ## Checkpoint folders
 
@@ -145,15 +145,9 @@ Optional extras: `uv sync --extra local-rerank` (cross-encoder), `--extra doclin
 
 ## Troubleshooting
 
-| Symptom | Fix |
-|---|---|
-| `ModuleNotFoundError: rag` | Run from the repo root. Activate the venv. |
-| pytest wants a key or the network | It should not. File an issue. |
-| `SKIPPED: no API key` | Expected. Set a key in `.env`, or start Ollama and pass `--generate api`. |
-| pgvector SKIP | Docker is optional. `docker compose up -d` then rerun the store lab. |
-| Chroma / Qdrant lock | Delete `store/chroma` or `store/qdrant` (ignored by git). Rebuild the index. |
-| Wrong model id | Change `LLM_MODEL` in `.env`. Never hard-code a model id in a notebook. |
-| Web CRAG | Stays off. `WEB_SEARCH_ENABLED=false`. |
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md) has every error we have seen while setting this repo up and running it, each
+with the exact text it prints, what it means and the fix: Git or Python not found, PowerShell blocking the venv, a
+command typed in the wrong folder, no model running, a wrong key, an account with no credit, and more.
 
 ## Honesty
 
