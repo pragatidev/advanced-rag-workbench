@@ -1,11 +1,18 @@
 import runpy
 from pathlib import Path
 
+import rag.llm
+import rag.settings
 from rag.llm import ping
 from rag.providers.hosted import ANTHROPIC, OPENAI, door_for
-from rag.settings import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL, Settings, load_env
+from rag.settings import _KEY_ENV_NAMES, DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL, Settings, load_env
 
 ROOT = Path(__file__).resolve().parents[1]
+# Every variable that can move generate off the local default door.
+_DOOR_ENV_NAMES = (
+    "RAGBENCH_API_BASE", "RAGBENCH_BASE_URL", "LLM_BASE_URL", "ANTHROPIC_BASE_URL",
+    "RAGBENCH_PROVIDER", "LLM_PROVIDER", "RAGBENCH_API_BACKEND", "LLM_BACKEND",
+)
 
 
 def test_section_02_settings_and_env_example():
@@ -37,8 +44,23 @@ def test_section_02_configure_scripts(capsys):
     assert "sk-ant-" not in out.replace("sk-ant-...", "")  # the key itself is never printed
 
 
-def test_section_02_ping_skips_without_key():
+def test_section_02_ping_skips_without_key(monkeypatch):
+    # Offline on every machine, even one with Ollama on 11434 or a key in .env:
+    # no .env, no key, no local server, and any network call fails the test.
+    monkeypatch.setattr(rag.settings, "load_env", lambda path=None: None)
+    for name in _KEY_ENV_NAMES + _DOOR_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(rag.llm, "_port_open", lambda host, port, timeout=0.3: False)
+    calls = []
+
+    def no_network(*args, **kwargs):
+        calls.append(args)
+        raise AssertionError("ping made a network call")
+
+    monkeypatch.setattr(rag.llm, "_post", no_network)
+    monkeypatch.setattr(rag.llm.urllib.request, "urlopen", no_network)
     result = ping("Reply with the single word pong.")
-    assert "skipped" in result or result.get("ok") is True
-    if result.get("skipped"):
-        assert "SKIPPED" in (result.get("note") or "")
+    assert calls == []
+    assert result["skipped"] is True
+    assert "SKIPPED" in result["note"]
+    assert result["endpoint"] == DEFAULT_LLM_BASE_URL
