@@ -37,6 +37,9 @@ def _post(url: str, headers: dict, body: dict, timeout: int) -> dict:
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:400]
         raise RuntimeError(f"model HTTP {exc.code}: {detail}") from exc
+    except urllib.error.URLError as exc:
+        # Nothing answered at all, e.g. Ollama is not running. Callers turn this into SKIPPED.
+        raise RuntimeError(f"model not reachable at {url} ({exc.reason})") from exc
 
 
 def _chat_openai(question: str, chunks: list[Chunk], timeout: int) -> dict:

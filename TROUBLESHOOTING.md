@@ -375,14 +375,14 @@ SKIPPED: no server on 11434/1234 and no LLM_API_KEY
 ```
 
 It says this with `LLM_API_KEY=ollama` in `.env` too, because `ollama` is a stand-in word, not a real key. With the
-LOCAL block uncommented in `.env` and `RAGBENCH_GENERATE=api`, `python -m rag ask "..."` prints a traceback of about 75
-lines that ends:
+LOCAL block uncommented in `.env` and `RAGBENCH_GENERATE=api`, `python -m rag ask "..."` answers from the retrieved text
+and puts this in the `"generator"` part of the answer:
 
 ```
-urllib.error.URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>
+    "note": "SKIPPED: model not reachable at http://localhost:11434/v1/chat/completions ([WinError 10061] No connection could be made because the target machine actively refused it)"
 ```
 
-What it means: nothing answers at `http://localhost:11434`, so Ollama is not installed or not running.
+The part in brackets is the refusal as Windows words it. What it means: nothing answers at `http://localhost:11434`, so Ollama is not installed or not running.
 
 Fix **(not tested here)**: install Ollama from https://ollama.com, start it, and pull the model: `ollama pull qwen3:8b`.
 Fix **(tested with the stand-in)**: with a server answering at 11434, the ping lab printed `ping pong` and the ask
