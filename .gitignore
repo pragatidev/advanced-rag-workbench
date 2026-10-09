@@ -25,3 +25,5 @@ store/qdrant/
 _planning/*
 !_planning/REBUILD_RUN_REPORT.md
 !_planning/BASICS_LABS_RUN_REPORT.md
+# Written by S12 part 2 (the lab, its twin and pytest); the lab rebuilds it on every run.
+labs/lab_s12_graph/part_2/community_summaries.json
