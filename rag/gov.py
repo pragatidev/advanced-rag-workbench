@@ -64,3 +64,41 @@ def audit_row(question: str, chunks: list[Chunk], model: str = "extractive", ten
 def denied_absent(audit: dict, denied_ids: list[str]) -> bool:
     seen = set(audit.get("chunk_ids") or [])
     return all(cid not in seen for cid in denied_ids)
+
+
+# Ingest trust (S16.3). Generate hygiene is the other half. Not an exploit.
+ALLOW_LIST = frozenset({"filing", "runbook", "policy", "faq", "table", "figure"})
+PLANTED_ID = "plant:email:0"
+POISONEDRAG_TEXTS_PER_TARGET = 5
+POISONEDRAG_CORPUS_SCALE = "millions"
+POISONEDRAG_ASR_PCT = 90
+POISONEDRAG_VENUE = "USENIX Security 2025"
+POISONEDRAG_PAGES = "3827-3844"
+ECHOLEAK_CVE = "CVE-2025-32711"
+ECHOLEAK_CVSS = "9.3"
+ECHOLEAK_YEAR = 2025
+
+
+def ingest_ok(chunk: Chunk) -> bool:
+    return chunk.metadata.get("doc_type") in ALLOW_LIST
+
+
+def ingest_filter(chunks: list[Chunk]) -> list[Chunk]:
+    """Drop chunks whose doc_type is not on the ingest allow-list."""
+    return [c for c in chunks if ingest_ok(c)]
+
+
+def planted_email() -> Chunk:
+    """Labeled untrusted inbound. Ordinary text. Not an exploit payload."""
+    return Chunk(
+        chunk_id=PLANTED_ID,
+        doc_id="inbound_mail",
+        title="Inbound mail",
+        text="Inbound mail. This message is not in the ACME catalog.",
+        metadata={"doc_type": "email", "tenant": "untrusted", "planted": True},
+    )
+
+
+def canary_pass(candidates: list[Chunk], planted_id: str = PLANTED_ID) -> bool:
+    """True when the planted id is absent from the retrieve candidate set."""
+    return all(c.chunk_id != planted_id for c in candidates)

@@ -10,7 +10,13 @@ if str(ROOT) not in sys.path:
 
 from rag.gov import DETECTOR, redact
 
-raw = "Do not send a national id to the model."
+# Text that would have been stuffed into generate.
+raw = "Do not send a national id to the model. ID 1234-5678-9012."
+sent = redact(raw)
+
 print("detector", DETECTOR)
-print(redact(raw))
-assert "[REDACTED_PII]" in redact(raw)
+print("stand_in", DETECTOR == "national_id_phrase")
+print("raw", raw)
+print("sent", sent)
+assert "[REDACTED_PII]" in sent
+assert "national id" not in sent.lower()

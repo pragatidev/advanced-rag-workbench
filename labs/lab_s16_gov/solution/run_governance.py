@@ -1,4 +1,7 @@
-"""SOLUTION Audit two tenants, prove the deny."""
+"""SOLUTION Audit two tenants, prove the deny.
+
+The audit is chunk ids and hashes. The final sentence is not the audit.
+"""
 from __future__ import annotations
 
 import sys
@@ -10,19 +13,41 @@ if str(ROOT) not in sys.path:
 
 from rag.chunkers import chunk_corpus
 from rag.corpus import load_documents
+from rag.generate import generate
 from rag.gov import audit_row, denied_absent, prefilter, redact
+from rag.retrieve import bm25_search
 
 docs = load_documents()
 chunks = chunk_corpus(docs, "recursive")
+query = "How do I reset my password?"
+k = 3
 denied = [c.chunk_id for c in chunks if c.doc_id == "faq"]
+rows = {}
+
+print("=== two tenants ===")
+print("query", query)
+print("denied", denied)
+
 for tenant in ("helix-east", "helix-west"):
     allowed_chunks = prefilter(chunks, tenant)
-    # pretend these are the prompt chunks
-    prompt = [c for c in allowed_chunks if "national id" in c.text.lower() or c.doc_id in {"faq", "privacy", "error_catalog"}][:4]
-    texts = [redact(c.text) for c in prompt]
-    row = audit_row("How does helix-east reset a password?", prompt, tenant=tenant)
-    print(tenant, "ids", row["chunk_ids"], "denied_absent", denied_absent(row, denied) if tenant == "helix-west" else "n/a")
-    print("  redacted_any", any("[REDACTED_PII]" in t for t in texts))
+    hits = bm25_search(query, allowed_chunks, k=k)
+    prompt = [h.chunk for h in hits]
+    sent = [redact(c.text) for c in prompt]
+    row = audit_row(query, prompt, tenant=tenant)
+    answer = generate(query, prompt)
+    rows[tenant] = row
+    print()
+    print("===", tenant, "===")
+    print("tenant", row["tenant"])
+    print("question_hash", row["question_hash"])
+    print("chunk_ids", row["chunk_ids"])
+    print("chunk_hashes", row["chunk_hashes"])
+    print("model", row["model"])
+    print("denied_absent", denied_absent(row, denied))
+    print("redacted_any", any("[REDACTED_PII]" in t for t in sent))
+    print("answer", answer)
+
+print()
+print("=== proof ===")
 print("west must not see faq ids")
-west_row = audit_row("q", prefilter(chunks, "helix-west")[:8], tenant="helix-west")
-print("proof", denied_absent(west_row, denied))
+print("proof", denied_absent(rows["helix-west"], denied))
