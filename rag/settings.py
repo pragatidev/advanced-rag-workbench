@@ -163,6 +163,10 @@ class _Settings:
         # Dummy keys used by local OpenAI-compat servers are not cloud secrets.
         if key.lower() in {"ollama", "lm-studio", "lmstudio", "not-needed", "none"}:
             return False
+        # Nor is the example text in .env.example (sk-ant-..., sk-...): a hosted block uncommented
+        # with no key pasted prints SKIPPED instead of sending a call that comes back 401.
+        if "..." in key:
+            return False
         return True
 
     @property

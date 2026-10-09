@@ -432,6 +432,22 @@ printed `"generator": "api"`.
 
 ## Hosted keys
 
+### `SKIPPED: no API key configured` with a hosted block in `.env`
+
+The ping lab prints its settings and then:
+
+```
+SKIPPED: no API key configured
+```
+
+and `labs/lab_s2_env/part_3/configure_hosted.py` prints `key_present False`.
+
+What it means: the Anthropic or OpenAI block is uncommented, but `LLM_API_KEY` still holds the example text from
+`.env.example`, `sk-ant-...` or `sk-...`. That is not a key, so the workbench sends nothing.
+
+Fix **(not tested here, no real key was used)**: paste your own key over the example text, as `LLM_API_KEY=` followed
+by the key with no quotes or spaces, and run the ping lab again.
+
 ### The provider says the key is wrong
 
 OpenAI, in the ping lab:

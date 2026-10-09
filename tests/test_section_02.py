@@ -80,3 +80,43 @@ def test_section_02_ping_note_names_the_key_only_when_none_is_set(monkeypatch):
     assert ping()["note"] == "SKIPPED: no server on 11434/1234 and no LLM_API_KEY"
     monkeypatch.setenv("LLM_API_KEY", "ollama")
     assert ping()["note"] == "SKIPPED: no server on 11434/1234"
+
+
+def _env_example_key_texts() -> set:
+    """Every value .env.example gives a key variable, commented or not (sk-ant-..., sk-...)."""
+    texts = set()
+    for line in (ROOT / ".env.example").read_text(encoding="utf-8").splitlines():
+        name, sep, value = line.lstrip("# ").partition("=")
+        if sep and name.strip() in _KEY_ENV_NAMES and value.strip():
+            texts.add(value.strip())
+    return texts
+
+
+def test_section_02_env_example_key_text_is_not_a_key(monkeypatch):
+    # A student uncomments a hosted block and forgets to paste the key: the example text is no key.
+    texts = _env_example_key_texts()
+    assert {"sk-ant-...", "sk-..."} <= texts
+    for name in _KEY_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    for text in sorted(texts):
+        monkeypatch.setenv("LLM_API_KEY", text)
+        assert Settings.has_api_key is False, text
+    monkeypatch.setenv("LLM_API_KEY", "a-pasted-key")
+    assert Settings.has_api_key is True
+
+
+def test_section_02_ping_with_the_example_key_skips_and_sends_nothing(monkeypatch):
+    # The Anthropic block uncommented as shipped: SKIPPED, not a call that comes back 401.
+    monkeypatch.setattr(rag.settings, "load_env", lambda path=None: None)
+    for name in _KEY_ENV_NAMES + _DOOR_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("LLM_BACKEND", "anthropic")
+    monkeypatch.setenv("LLM_BASE_URL", "https://api.anthropic.com")
+    monkeypatch.setenv("LLM_API_KEY", "sk-ant-...")
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("ping made a network call")
+
+    monkeypatch.setattr(rag.llm, "_post", no_network)
+    monkeypatch.setattr(rag.llm.urllib.request, "urlopen", no_network)
+    assert ping()["note"] == "SKIPPED: no API key configured"
