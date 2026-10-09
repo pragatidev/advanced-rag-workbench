@@ -125,10 +125,13 @@ def ping(prompt: str = "Reply with the single word pong.", timeout: int = 20) ->
         port = 11434 if "11434" in base else 1234 if "1234" in base else None
         if port is not None and not _port_open("127.0.0.1", port):
             if not Settings.has_api_key:
+                note = "SKIPPED: no server on 11434/1234"
+                if not key:  # a local placeholder such as "ollama" is a key line, just not a real key
+                    note += " and no LLM_API_KEY"
                 return {
                     "ok": False,
                     "skipped": True,
-                    "note": "SKIPPED: no server on 11434/1234 and no LLM_API_KEY",
+                    "note": note,
                     "model": model,
                     "endpoint": base,
                 }

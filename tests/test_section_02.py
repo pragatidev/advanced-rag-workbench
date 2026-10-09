@@ -64,3 +64,19 @@ def test_section_02_ping_skips_without_key(monkeypatch):
     assert result["skipped"] is True
     assert "SKIPPED" in result["note"]
     assert result["endpoint"] == DEFAULT_LLM_BASE_URL
+
+
+def test_section_02_ping_note_names_the_key_only_when_none_is_set(monkeypatch):
+    # LLM_API_KEY=ollama is set, so the note must not say "no LLM_API_KEY". Offline, as above.
+    monkeypatch.setattr(rag.settings, "load_env", lambda path=None: None)
+    for name in _KEY_ENV_NAMES + _DOOR_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(rag.llm, "_port_open", lambda host, port, timeout=0.3: False)
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("ping made a network call")
+
+    monkeypatch.setattr(rag.llm, "_post", no_network)
+    assert ping()["note"] == "SKIPPED: no server on 11434/1234 and no LLM_API_KEY"
+    monkeypatch.setenv("LLM_API_KEY", "ollama")
+    assert ping()["note"] == "SKIPPED: no server on 11434/1234"
