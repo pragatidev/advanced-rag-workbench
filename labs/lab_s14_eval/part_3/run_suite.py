@@ -1,6 +1,7 @@
 """Two pipelines and metrics.json."""
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -12,5 +13,8 @@ from rag.eval.runner import run_eval
 
 summary = run_eval(a="naive", b="hybrid", out_dir=ROOT / "runs" / "naive_vs_hybrid")
 print("n", summary["n"])
-print("mean", summary["mean"])
+print("a", summary["a"])
+print("b", summary["b"])
+print("mean")
+print(json.dumps(summary["mean"], indent=2))
 print("metrics", ROOT / "runs" / "naive_vs_hybrid" / "metrics.json")
