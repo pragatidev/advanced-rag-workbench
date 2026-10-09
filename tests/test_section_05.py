@@ -14,3 +14,11 @@ def test_section_05_chunkers(capsys):
     docs = {d.doc_id: d for d in load_documents()}
     sem = cosine_breakpoint_chunks(docs["filing_q2_2023"])
     assert sem
+
+
+def test_section_05_compare_chunkers(capsys):
+    runpy.run_path(str(ROOT / "labs" / "lab_s5_chunk" / "part_3" / "compare_chunkers.py"), run_name="__main__")
+    out = capsys.readouterr().out
+    assert "pick: this table. not a blog" in out
+    assert "3pct" in out
+    assert "acme" in out
