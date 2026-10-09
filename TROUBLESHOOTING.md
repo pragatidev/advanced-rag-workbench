@@ -387,7 +387,11 @@ retrieved text and puts this in the `"generator"` part of the answer:
     "note": "SKIPPED: model not reachable at http://localhost:11434/v1/chat/completions ([WinError 10061] No connection could be made because the target machine actively refused it)"
 ```
 
-The part in brackets is the refusal as Windows words it.
+The part in brackets is the refusal as Windows words it. `basics/grounded_ask.py` prints its step one and then:
+
+```
+    SKIPPED: no model server at http://localhost:11434/v1 (start Ollama and pull qwen3:8b, then run this again)
+```
 
 What it means: nothing answers at `http://localhost:11434`, so Ollama is not installed or not running.
 
