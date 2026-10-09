@@ -17,12 +17,15 @@ if str(ROOT) not in sys.path:
 import os
 import subprocess
 
-print("python", sys.version.split()[0])
-print("root", ROOT)
-print("pyproject", (ROOT / "pyproject.toml").is_file())
-print("python-version", (ROOT / ".python-version").read_text(encoding="utf-8").strip())
+print("python", sys.version.split()[0], flush=True)
+print("root", ROOT, flush=True)
+print("pyproject", (ROOT / "pyproject.toml").is_file(), flush=True)
+print("python-version", (ROOT / ".python-version").read_text(encoding="utf-8").strip(), flush=True)
 if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("RAGBENCH_SMOKE"):
     print("SKIP pytest inside an existing test run")
 else:
-    proc = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=ROOT)
-    print("pytest_exit", proc.returncode)
+    # The install gate: the full suite, every section, no API key, about 20 seconds.
+    # pytest.ini adds -q, so it prints dots and one count line (the s is pgvector,
+    # which skips unless Docker is up).
+    proc = subprocess.run([sys.executable, "-m", "pytest"], cwd=ROOT)
+    print("pytest_exit", proc.returncode, flush=True)

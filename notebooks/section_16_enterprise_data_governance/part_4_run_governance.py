@@ -2,10 +2,12 @@
 # # Audit two tenants, prove the deny
 #
 # Lab `lab_s16_gov` / `part_4`.
-# The audit is chunk ids and hashes. The final sentence is not the audit.
 
 # %%
-"""Audit two tenants, prove the deny."""
+"""Audit two tenants, prove the deny.
+
+The audit is chunk ids and hashes. The final sentence is not the audit.
+"""
 from __future__ import annotations
 
 import sys

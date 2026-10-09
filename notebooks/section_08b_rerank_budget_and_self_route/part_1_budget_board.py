@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Read the millisecond print against a 2-second board
+# # Copy the S8.5 millisecond print onto a 2-second board and mark one query SKIP
 #
 # Lab `lab_s8b_budget` / `part_1`.
 

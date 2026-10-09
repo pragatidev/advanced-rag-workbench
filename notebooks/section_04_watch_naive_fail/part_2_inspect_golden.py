@@ -19,9 +19,23 @@ from rag.eval.golden import REQUIRED_CATEGORIES, confirm_tags, load_golden
 rows = load_golden()
 report = confirm_tags(rows)
 print("n", report["n"])
+print("n_canaries", report["n_canaries"])
 print("categories", report["categories"])
 print("canary_ids", report["canary_ids"])
 print("required", list(REQUIRED_CATEGORIES))
 print("missing_categories", report["missing_categories"])
 print("missing_canary_categories", report["missing_canary_categories"])
+print("ok", report["ok"])
+
+FOCUS = ("id", "abstention", "acl_deny", "table")
+print("focus_canaries")
+for cat in FOCUS:
+    row = next(r for r in rows if r.get("canary") is True and r.get("category") == cat)
+    print("category", cat)
+    print("id", row["id"])
+    print("source_id", row.get("source_id") or "(empty)")
+    print("gold_spans", row.get("gold_spans"))
+    print("canary", row.get("canary"))
+    print("---")
+
 assert report["ok"], report

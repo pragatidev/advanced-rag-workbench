@@ -93,7 +93,7 @@ def test_section_18_4_ast_chunking():
     assert "tree-sitter" in page
     assert "Course identity stays enterprise documents" in page
     src = (
-        ROOT / "notebooks/section_18_optional_2026_frontier_cards/classify_invoice.py"
+        ROOT / "docs/mechanisms/classify_invoice.py"
     ).read_text(encoding="utf-8")
     assert "def classify_invoice" in src
     assert "-> LedgerReject" in src

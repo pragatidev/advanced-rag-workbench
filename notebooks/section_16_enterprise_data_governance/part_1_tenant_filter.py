@@ -4,7 +4,11 @@
 # Lab `lab_s16_gov` / `part_1`.
 
 # %%
-"""Tenant metadata filter."""
+"""Tenant metadata filter.
+
+Same index, two ACLs. Shared docs stay visible.
+The FAQ is tagged helix-east. Helix-west does not see it.
+"""
 from __future__ import annotations
 
 import sys
@@ -22,6 +26,15 @@ docs = load_documents()
 chunks = chunk_corpus(docs, "recursive")
 east = prefilter(chunks, "helix-east")
 west = prefilter(chunks, "helix-west")
-print("all", len(chunks), "east", len(east), "west", len(west))
+faq = [c for c in chunks if c.doc_id == "faq"]
+
+print("=== same index, two ACLs ===")
+print("all", len(chunks))
+print("east", len(east), "west", len(west))
 print("east > west (FAQ is helix-east)", len(east) > len(west))
-print("denied west faq", [c.chunk_id for c in chunks if c.doc_id == "faq" and not allowed(c, "helix-west")])
+print("faq_ids", [c.chunk_id for c in faq])
+print("faq_tenant", [c.metadata.get("tenant") for c in faq])
+print("denied west faq", [c.chunk_id for c in faq if not allowed(c, "helix-west")])
+shared_west = [c.chunk_id for c in west if c.metadata.get("tenant") == "shared"]
+print("shared in west", len(shared_west))
+print("shared stay visible", bool(shared_west))

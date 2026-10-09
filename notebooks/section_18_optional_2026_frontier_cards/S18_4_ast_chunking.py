@@ -16,8 +16,8 @@ ROOT = Path.cwd() if (Path.cwd() / "rag").is_dir() else Path(__file__).resolve()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-HERE = Path(__file__).resolve().parent
-src_path = HERE / "classify_invoice.py"
+# A code sample to chunk, not a script: it names types it never defines.
+src_path = ROOT / "docs" / "mechanisms" / "classify_invoice.py"
 src = src_path.read_text(encoding="utf-8")
 page = (ROOT / "docs" / "mechanisms" / "ast_chunking.md").read_text(encoding="utf-8")
 
