@@ -28,7 +28,7 @@ No key is needed for retrieval, the labs or pytest. pytest ends with one count l
 | # | Section | Notebook folder | Lab |
 |---:|---|---|---|
 | 1 | Why RAG, What You Will Build, Setup, and Your First RAG Run | `notebooks/section_01_get_oriented/` (three short walks) and `notebooks/section_02_set_up_any_provider_and_local/` (the setup lab's twins) | `labs/lab_s2_env/`, `basics/cold_ask.py`, `basics/grounded_ask.py`, `basics/two_chunks_flags.py` |
-| 2 | How a Language Model Answers, and Why It Does Not Know Your Files | none | `basics/cold_ask.py` |
+| 2 | How a Language Model Answers, and Why It Does Not Know Your Files | none | `basics/count_what_you_send.py` |
 | 3 | Foundations: Embeddings, Cosine, and Your First Cut (skip if you already ship RAG) | none | `basics/embed_two_sentences.py`, `basics/similarity_scores.py`, `basics/cut_one_document.py` |
 | 4 | Foundations: Store, Ask, and Your First RAG Program (skip if you already ship RAG) | none | `basics/store_and_ask.py`, `basics/mini_rag.py` |
 | 5 | Naive RAG: Chunk, Embed, Retrieve, Then Generate | `notebooks/section_03_run_naive_rag/` | `labs/lab_s3_naive/` |

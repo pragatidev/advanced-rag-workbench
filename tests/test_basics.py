@@ -14,6 +14,7 @@ SCRIPTS = [
     "mini_rag",
     "grounded_ask",
     "cold_ask",
+    "count_what_you_send",
 ]
 # Every variable that can move generate off the local default door, or pick the embedder.
 _DOOR_ENV_NAMES = (
@@ -196,3 +197,67 @@ def test_cold_ask_local_leg_reads_the_door_from_settings(monkeypatch):
         {"Content-Type": "application/json", "Authorization": "Bearer lm-studio"},
         {"model": "my-loaded-model", "messages": _ASKED, "temperature": 0},
     )]
+
+
+def _count(monkeypatch, server_up: bool):
+    """count_what_you_send with no .env, no key, the default local door and the offline hash embedder."""
+    module = _load("count_what_you_send")
+    monkeypatch.setattr(module, "load_dotenv", lambda path=None: None)
+    for name in _KEY_ENV_NAMES + _DOOR_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("EMBED_MODEL", "hash")
+    monkeypatch.setattr(module, "_port_open", lambda host, port, timeout=0.3: server_up)
+    return module
+
+
+def test_count_what_you_send_skips_with_no_server(monkeypatch, capsys):
+    module = _count(monkeypatch, server_up=False)
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("count_what_you_send made a network call")
+
+    monkeypatch.setattr(module, "_call", no_network)
+    assert module.main() == 0
+    out = capsys.readouterr().out
+    assert "\nSKIPPED: no model server at http://localhost:11434 (start Ollama and pull qwen3:8b" in out
+    assert "the model read" not in out
+
+
+def test_count_what_you_send_asks_three_times_and_prints_the_meter(monkeypatch, capsys):
+    module = _count(monkeypatch, server_up=True)
+    sent = []
+    read = iter([312, 999, 258])
+
+    def fake_call(url, body=None):
+        if url.endswith("/api/ps"):
+            return {"models": [{"name": "qwen3:8b", "context_length": 4096}]}
+        sent.append((url, body))
+        return {"prompt_eval_count": next(read), "eval_count": 200, "message": {"content": "An answer [1]."}}
+
+    monkeypatch.setattr(module, "_call", fake_call)
+    assert module.main() == 0
+    out = capsys.readouterr().out
+    every, three = module.pieces()
+    assert [u for u, _ in sent] == ["http://localhost:11434/api/chat"] * 3
+    users = [b["messages"][1]["content"] for _, b in sent]
+    assert users == [_source_blob(module.QUESTION, three)] + [_source_blob(module.QUESTION, every)] * 2
+    assert [b["messages"][0]["content"] for _, b in sent] == [rag.llm.SYSTEM] * 3
+    assert [b["options"] for _, b in sent] == [{"temperature": 0}] * 2 + [{"temperature": 0, "num_ctx": 512}]
+    assert f"[1] THREE PIECES: 3 of {len(every)} pieces" in out
+    assert "    the model read:  312 tokens\n" in out and "    the model read:  258 tokens\n" in out
+    assert "Your machine gave qwen3:8b a window of 4096 tokens." in out
+    assert "With a 512-token window the model read 258 of those 999 tokens," in out
+
+
+def test_count_what_you_send_says_nothing_was_dropped_when_it_fit(monkeypatch, capsys):
+    module = _count(monkeypatch, server_up=True)
+    read = iter([312, 999, 999])
+
+    def fake_call(url, body=None):
+        if url.endswith("/api/ps"):
+            return {"models": []}
+        return {"prompt_eval_count": next(read), "eval_count": 9, "message": {"content": "x"}}
+
+    monkeypatch.setattr(module, "_call", fake_call)
+    assert module.main() == 0
+    assert "nothing warned you" not in capsys.readouterr().out

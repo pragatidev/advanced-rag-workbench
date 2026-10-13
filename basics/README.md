@@ -2,7 +2,7 @@
 
 Tiny scripts. One idea each. No API key. Corpus is `data/acme/`.
 
-Run them from the repo root, same interpreter as Section 2.
+Run them from the repo root, with the `.venv` you made in Section 1 active.
 
 ## Section 1: why RAG
 
@@ -15,6 +15,14 @@ Run them from the repo root, same interpreter as Section 2.
 1. `cold_ask.py`: TS-999 asked with no documents, of the hosted door in `.env` (Anthropic or OpenAI-compatible; skipped with no key) and of a local model (the local door in `.env`, such as LM Studio, or else Ollama on `localhost:11434`), then the three pieces retrieval finds for the same question.
 2. `grounded_ask.py`: the same question through both steps of RAG. Step one finds the same three pieces. Step two sends them to the model in `.env` with the workbench's own instructions (answer only from the pieces, cite them) and prints the message as sent and the answer. Local Ollama needs no key; with no model server running, it prints `SKIPPED` after step one.
 3. `two_chunks_flags.py`: the fixed cut on the Q2 filing, both pieces, and which piece holds the name and which the number.
+
+## Section 2: how a language model answers
+
+```
+.venv\Scripts\python basics/count_what_you_send.py
+```
+
+1. `count_what_you_send.py`: the TS-999 question sent to the local model three times, with the model's own meter printed each time: the three pieces retrieval finds, the whole of `data/acme`, and the whole pile again with the model's window set to 512 tokens on purpose. It reads Ollama's own meter (`/api/chat`, `/api/ps`), so it asks the local door in `.env`, or Ollama on `localhost:11434`; with no Ollama answering it prints `SKIPPED`. No key.
 
 ## Sections 3 and 4: the foundations
 
