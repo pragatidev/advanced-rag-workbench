@@ -36,10 +36,10 @@ Run them in this order:
 .venv\Scripts\python basics/mini_rag.py
 ```
 
-1. `embed_two_sentences.py`: text becomes a list of numbers. Two ACME revenue sentences sit nearer than a password rule.
-2. `similarity_scores.py`: cosine is the angle between those lists, written in plain math. A three-row ranked table.
+1. `embed_two_sentences.py`: text becomes a list of 384 numbers on the free local model in `.env` (all-MiniLM-L6-v2, the look-up's model). Two ACME revenue sentences sit nearer than a password rule, and a question that shares no word with them still lands on them; the same question on a word-matching stand-in (`HashEmbedder`) shows what meaning adds.
+2. `similarity_scores.py`: cosine is the angle between those lists, written in plain math, on the same model. A three-row ranked table with each arrow's length.
 3. `cut_one_document.py`: load the Q2 filing, cut it fixed-size, print one full chunk so you see what a chunk is.
 4. `store_and_ask.py`: put those chunks in Chroma, ask one question, read the neighbors and their scores.
 5. `mini_rag.py`: the capstone. Load the corpus, chunk, embed, store, retrieve, extract an answer. Your first working RAG program.
 
-These use `HashEmbedder` so they stay offline. Section 3 does the same loop as lab checkpoints.
+`cut_one_document.py`, `store_and_ask.py` and `mini_rag.py` use `HashEmbedder` so they stay offline; the two embedding scripts use the model in `.env` and fall back to `HashEmbedder` with a printed note if it cannot load. Section 3 does the same loop as lab checkpoints.
